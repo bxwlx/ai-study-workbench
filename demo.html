@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>AI 学习工作台</title>
+<style>
+/* ============ 设计令牌（报告 v2 设计规范） ============ */
+:root{
+  --primary:#4A6CF7; --primary-light:#6B8AFD; --primary-deep:#3B56D4;
+  --bg:#F7F8FA; --card:#FFFFFF;
+  --text:#1F2329; --text-2:#646A73; --text-3:#9CA0A8;
+  --ok:#10B981; --warn:#F59E0B; --danger:#EF4444;
+  --line:#EBEDF0; --radius:14px; --radius-s:10px;
+  --shadow:0 1px 2px rgba(31,35,41,.04),0 4px 16px rgba(31,35,41,.05);
+  --shadow-lift:0 6px 24px rgba(74,108,247,.14);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  background:var(--bg); color:var(--text); font-size:14px; line-height:1.6;
+}
+button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+input,textarea,select{font-family:inherit;font-size:16px;outline:none}
+a{color:var(--primary);text-decoration:none}
+
+/* ============ 布局：左侧栏 + 内容区 ============ */
+.layout{display:flex;min-height:100vh}
+.sidebar{
+  width:216px;flex-shrink:0;background:var(--card);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;padding:18px 12px;
+  position:sticky;top:0;height:100vh;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px}
+.brand-logo{
+  width:38px;height:38px;border-radius:11px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);
+  display:flex;align-items:center;justify-content:center;color:#fff;
+}
+.brand-name{font-size:15px;font-weight:600;line-height:1.3}
+.brand-sub{font-size:11px;color:var(--text-3)}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-s);
+  color:var(--text-2);font-size:14px;margin-bottom:2px;transition:background .15s,color .15s;
+}
+.nav-item svg{width:18px;height:18px;flex-shrink:0}
+.nav-item:hover{background:#F3F5F9}
+.nav-item.active{background:#EEF1FE;color:var(--primary);font-weight:500}
+.side-foot{margin-top:auto;font-size:11px;color:var(--text-3);line-height:1.7;padding:10px 8px 0;border-top:1px solid var(--line)}
+
+.main{flex:1;min-width:0;padding:22px 26px 40px;max-width:980px;margin:0 auto;width:100%}
+.view{animation:fadeIn .22s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* 移动端底部 Tab */
+.tabbar{display:none}
+
+/* ============ 通用组件 ============ */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.pad{padding:18px 20px}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin:26px 2px 12px}
+.sec-head:first-child{margin-top:0}
+.sec-title{font-size:16px;font-weight:600}
+.sec-desc{font-size:12px;color:var(--text-3);margin-top:2px}
+.btn-ghost{
+  border:1px solid var(--primary);color:var(--primary);padding:6px 14px;border-radius:9px;
+  font-size:13px;transition:all .15s;background:#fff;
+}
+.btn-ghost:hover{background:var(--primary);color:#fff}
+.btn-solid{background:var(--primary);color:#fff;padding:8px 16px;border-radius:9px;font-size:13px;transition:background .15s}
+.btn-solid:hover{background:var(--primary-deep)}
+.btn-danger{background:#FEECEC;color:var(--danger);padding:8px 16px;border-radius:9px;font-size:13px}
+.btn-danger:hover{background:var(--danger);color:#fff}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:8px}
+
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.search{
+  width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 14px;
+  margin-bottom:14px;background:#fff;color:var(--text);transition:border-color .15s;
+}
+.search:focus{border-color:var(--primary-light)}
+.search::placeholder{color:var(--text-3)}
+/* AI 设置输入 */
+.ai-input{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 11px;margin-top:6px;background:#fff;color:var(--text);font-size:14px;transition:border-color .15s}
+.ai-input:focus{border-color:var(--primary-light)}
+textarea.ai-input{resize:vertical;line-height:1.6;font-size:13px}
+/* AI 对话气泡 */
+.chat-foot{display:flex;gap:10px}
+.chat-foot input{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:16px;background:#fff}
+.chat-msg{display:flex;margin-bottom:10px}
+.chat-msg.me{justify-content:flex-end}
+.chat-bubble{max-width:86%;padding:10px 14px;border-radius:13px;font-size:13.5px;line-height:1.7;word-break:break-word;white-space:normal}
+.chat-msg.me .chat-bubble{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border-bottom-right-radius:4px}
+.chat-msg.ai .chat-bubble{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px;color:var(--text)}
+.chip{
+  padding:6px 14px;border-radius:999px;font-size:13px;background:#fff;color:var(--text-2);
+  border:1px solid var(--line);transition:all .15s;
+}
+.chip:hover{border-color:var(--primary-light);color:var(--primary)}
+.chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
+
+.tag{display:inline-block;padding:2px 9px;border-radius:6px;font-size:11px;font-weight:500}
+.tag-blue{background:#EEF1FE;color:var(--primary)}
+.tag-green{background:#E7F8F1;color:#0B9A70}
+.tag-orange{background:#FEF4E5;color:#C77F06}
+.tag-gray{background:#F3F4F6;color:var(--text-2)}
+.tag-red{background:#FDECEC;color:var(--danger)}
+
+.badge-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:1px}
+
+/* Hero */
+.hero{
+  border-radius:16px;padding:26px 26px 24px;color:#fff;position:relative;overflow:hidden;
+  background:linear-gradient(120deg,var(--primary-deep) 0%,var(--primary) 55%,var(--primary-light) 100%);
+}
+.hero::after{content:"";position:absolute;right:-60px;top:-70px;width:230px;height:230px;border-radius:50%;background:rgba(255,255,255,.09)}
+.hero::before{content:"";position:absolute;right:70px;bottom:-90px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.07)}
+.hero-badge{
+  display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+  padding:3px 12px;border-radius:999px;font-size:12px;margin-bottom:12px;position:relative;z-index:1;
+}
+.hero h1{font-size:24px;font-weight:600;position:relative;z-index:1}
+.hero p{font-size:13px;opacity:.88;margin-top:6px;position:relative;z-index:1}
+
+/* 统计卡 */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 8px 12px;text-align:center;box-shadow:var(--shadow)}
+.stat-num{font-size:26px;font-weight:600;line-height:1.2}
+.stat-label{font-size:12px;color:var(--text-3);margin-top:2px}
+.stat-bar{height:3px;border-radius:2px;width:44px;margin:8px auto 0}
+.bar-blue{background:linear-gradient(90deg,var(--primary),var(--primary-light))}
+.bar-yellow{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
+.bar-green{background:linear-gradient(90deg,#10B981,#34D399)}
+.bar-purple{background:linear-gradient(90deg,#8B5CF6,#A78BFA)}
+
+/* 列表卡（图标方块 + 标题 + 徽章 + 副标题 + 箭头） */
+.list-card{
+  display:flex;align-items:center;gap:14px;background:var(--card);
+  border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;
+  box-shadow:var(--shadow);transition:transform .18s,box-shadow .18s;cursor:pointer;
+}
+.list-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lift)}
+.lc-icon{
+  width:42px;height:42px;border-radius:11px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;
+}
+.lc-icon.gray{background:linear-gradient(135deg,#B9C0CC,#98A1B0)}
+.lc-icon.green{background:linear-gradient(135deg,#10B981,#34D399)}
+.lc-body{flex:1;min-width:0}
+.lc-title{font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lc-title .st{font-size:11px;color:var(--text-3);font-weight:400}
+.lc-desc{font-size:12.5px;color:var(--text-2);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lc-arrow{
+  width:30px;height:30px;border-radius:50%;background:#F3F5F9;color:var(--text-2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;
+}
+.list-card:hover .lc-arrow{background:var(--primary);color:#fff}
+.lc-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+
+/* 四段进度条 */
+.seg-bar{display:flex;gap:6px;margin:14px 0 8px}
+.seg{
+  flex:1;border-radius:10px;padding:10px 6px;text-align:center;border:1.5px solid var(--line);
+  background:#FAFBFC;transition:all .2s;position:relative;
+}
+.seg .seg-t{font-size:12.5px;font-weight:600;color:var(--text-2)}
+.seg .seg-m{font-size:11px;color:var(--text-3);margin-top:1px}
+.seg.done{background:linear-gradient(135deg,var(--primary),var(--primary-light));border-color:var(--primary)}
+.seg.done .seg-t,.seg.done .seg-m{color:#fff}
+.seg:not(.done):hover{border-color:var(--primary-light)}
+.remain{font-size:12.5px;color:var(--text-2)}
+.remain b{color:var(--primary)}
+
+/* 今日任务卡 */
+.task-card{border-left:4px solid var(--primary)}
+.task-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.task-title{font-size:18px;font-weight:600}
+.task-goal{font-size:13px;color:var(--text-2);margin-top:4px}
+
+/* 提示条 */
+.alert{display:flex;align-items:center;gap:10px;border-radius:var(--radius-s);padding:11px 14px;font-size:13px;margin-bottom:12px}
+.alert-warn{background:#FEF7E8;border:1px solid #F5D48F;color:#8A6116}
+.alert-red{background:#FDEEEE;border:1px solid #F3B8B8;color:#9C2B2B}
+.alert-info{background:#EEF3FE;border:1px solid #C4D2FB;color:#3350B8}
+
+/* 手册网格 */
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+
+/* 行式条目（我的页） */
+.row-item{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);gap:12px}
+.row-item:last-child{border-bottom:none}
+.row-title{font-size:14px;font-weight:500}
+.row-desc{font-size:12px;color:var(--text-3);margin-top:2px}
+
+/* 抽屉 */
+.drawer-mask{position:fixed;inset:0;background:rgba(31,35,41,.4);z-index:60;opacity:0;transition:opacity .2s;pointer-events:none}
+.drawer-mask.show{opacity:1;pointer-events:auto}
+.drawer{
+  position:fixed;top:0;right:0;bottom:0;width:min(480px,92vw);background:var(--card);z-index:61;
+  transform:translateX(102%);transition:transform .26s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(31,35,41,.12);
+}
+.drawer.show{transform:none}
+.drawer-head{padding:18px 22px 12px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.drawer-body{flex:1;overflow-y:auto;padding:18px 22px}
+.drawer-foot{padding:12px 22px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;gap:10px}
+.dh-title{font-size:17px;font-weight:600;line-height:1.4}
+.dh-tags{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+.d-close{width:32px;height:32px;border-radius:50%;background:#F3F5F9;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.d-h{font-size:13.5px;font-weight:600;margin:16px 0 6px}
+.d-p{font-size:13.5px;color:var(--text-2);line-height:1.75}
+.d-p b{color:var(--text)}
+/* Markdown 正文阅读排版 */
+.md-body{font-size:14px;line-height:1.8;color:var(--text);word-break:break-word}
+.md-body h1,.md-body h2,.md-body h3,.md-body h4{font-weight:600;margin:20px 0 8px;line-height:1.4}
+.md-body h1{font-size:19px}
+.md-body h2{font-size:16.5px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.md-body h3{font-size:15px}
+.md-body h4{font-size:14px;color:var(--text-2)}
+.md-body p{margin:9px 0;color:var(--text-2)}
+.md-body ul{margin:8px 0 8px 2px;padding-left:18px;list-style:disc}
+.md-body li{margin:4px 0;color:var(--text-2)}
+.md-body code{background:#F3F5F9;padding:1px 6px;border-radius:5px;font-size:12.5px;color:var(--primary-deep)}
+.md-body pre{background:#F7F8FA;border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto;margin:10px 0}
+.md-body pre code{background:none;padding:0;color:var(--text);font-size:12.5px}
+.md-body blockquote{border-left:3px solid var(--primary-light);padding:2px 0 2px 12px;margin:10px 0;color:var(--text-2);background:#FAFBFC}
+.md-body table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+.md-body th,.md-body td{border:1px solid var(--line);padding:7px 10px;text-align:left}
+.md-body th{background:#F7F8FA;font-weight:600}
+.md-body a{color:var(--primary)}
+.md-body hr{border:none;border-top:1px solid var(--line);margin:16px 0}
+.quiz-item{background:#FAFBFC;border:1px solid var(--line);border-radius:10px;padding:10px 13px;margin-bottom:8px}
+.quiz-q{font-size:13px;font-weight:500;display:flex;justify-content:space-between;gap:8px;align-items:flex-start;cursor:pointer}
+.quiz-a{font-size:12.5px;color:var(--ok);margin-top:6px;display:none}
+.quiz-item.open .quiz-a{display:block}
+.tips-li{font-size:13px;color:var(--text-2);padding:5px 0 5px 16px;position:relative}
+.tips-li::before{content:"";position:absolute;left:2px;top:13px;width:6px;height:6px;border-radius:50%;background:var(--primary-light)}
+
+/* 弹窗 */
+.modal-mask{position:fixed;inset:0;background:rgba(31,35,41,.45);z-index:80;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-mask.show{display:flex}
+.modal{background:var(--card);border-radius:16px;padding:24px;width:min(380px,92vw);box-shadow:0 20px 60px rgba(31,35,41,.2)}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.modal p{font-size:13px;color:var(--text-2);margin-bottom:18px}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end}
+.modal input{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin-bottom:16px}
+
+/* Toast */
+#toast{
+  position:fixed;left:50%;bottom:40px;transform:translateX(-50%) translateY(20px);
+  background:rgba(31,35,41,.92);color:#fff;font-size:13px;padding:10px 20px;border-radius:10px;
+  z-index:99;opacity:0;transition:all .25s;pointer-events:none;max-width:86vw;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* 星标 */
+.fav-btn{color:#C6CBD4;transition:color .15s;padding:4px}
+.fav-btn svg{width:17px;height:17px;display:block}
+.fav-btn.on{color:#F5B301}
+.fav-btn:hover{color:#F5B301}
+
+/* 空态 */
+.empty{text-align:center;padding:42px 20px;color:var(--text-3)}
+.empty .e-icon{width:52px;height:52px;border-radius:14px;background:#F3F5F9;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#B9C0CC}
+.empty .e-t{font-size:14px;color:var(--text-2)}
+.empty .e-d{font-size:12px;margin-top:4px}
+.empty .btn-ghost{margin-top:14px;display:inline-block}
+
+/* 步骤条（学习页） */
+.step-strip{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.step-cell{
+  flex:1;min-width:86px;background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:9px 6px;text-align:center;font-size:12px;color:var(--text-2);
+}
+.step-cell .sc-code{font-weight:600;color:var(--text);font-size:12.5px}
+.step-cell.done{background:#E7F8F1;border-color:#B5EAD5}
+.step-cell.done .sc-code{color:#0B9A70}
+.step-cell.doing{background:#EEF1FE;border-color:var(--primary-light)}
+.step-cell.doing .sc-code{color:var(--primary)}
+
+/* ============ 响应式 ============ */
+@media (max-width:768px){
+  .sidebar{display:none}
+  .main{padding:16px 14px calc(76px + env(safe-area-inset-bottom))}
+  .stat-row{grid-template-columns:repeat(2,1fr)}
+  .grid-2{grid-template-columns:1fr}
+  .tabbar{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;
+    background:var(--card);border-top:1px solid var(--line);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+  }
+  .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--text-3);padding:4px 0;min-height:44px;justify-content:center}
+  .tab-item svg{width:20px;height:20px}
+  .tab-item.active{color:var(--primary);font-weight:500}
+  .hero{padding:20px 18px}
+  .hero h1{font-size:20px}
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- ============ 左侧栏（PC） ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.2 5.6.6-4.2 3.9 1.2 5.6L12 14.9 7 17.3l1.2-5.6L4 7.8l5.6-.6z"/></svg>
+      </div>
+      <div>
+        <div class="brand-name" id="brandName">AI 学习工作台</div>
+        <div class="brand-sub" id="brandSub">学 AI · 用 AI</div>
+      </div>
+    </div>
+    <div id="nav"></div>
+    <div class="side-foot">数据保存在本机浏览器<br>建议定期导出备份</div>
+  </aside>
+
+  <!-- ============ 内容区 ============ -->
+  <main class="main"><div id="view" class="view"></div></main>
+</div>
+
+<!-- ============ 移动端底部 Tab ============ -->
+<nav class="tabbar" id="tabbar"></nav>
+
+<!-- 抽屉 -->
+<div class="drawer-mask" id="drawerMask" data-action="drawer-close"></div>
+<div class="drawer" id="drawer"></div>
+
+<!-- 确认弹窗 -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <h3 id="modalTitle"></h3>
+    <p id="modalDesc"></p>
+    <div class="modal-btns" id="modalBtns"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// 示例内容包（AI 学习通用版）：与 index.html 同目录即可直接体验。
+// 换领域只改本文件：theme / modules / daily / manuals / prompts / glossary / tutorials / platforms。
+// file 留空 = 对应按钮自动隐藏。
+
+window.__WB_CONTENT__ = {
+  "app": "ai-study-workbench-example",
+  "version": 1,
+  "updatedAt": "2026-09-03",
+
+  "theme": {
+    "appName": "AI 学习工作台",
+    "slogan": "学 AI · 用 AI",
+    "greeting": "你好，AI 学习者",
+    "greetingSub": "今天也来推进一点：走完 60 分钟四段，读一篇内容，把产出记下来。",
+    "stageNames": ["入门"],
+    "contentLabel": "专栏",
+    "unitMinutes": 60,
+    "templates": 0,
+    "quickLinks": []
+  },
+
+  "profile": { "stage": 1, "stageDay": 1, "streak": 0, "dailyMinutes": 60 },
+
+  // ---------- 模块（阶段一 1.0-1.8，AI 技能入门通用路径） ----------
+  "modules": [
+    {
+      id: "m10", code: "1.0", stage: 1, name: "术语急救包",
+      goal: "一张自己的 AI 术语表",
+      learn: "主流模型有哪些、各适合什么；Token 与计费；幻觉高发区；API Key 安全；上下文窗口",
+      practice: "挑 2 个不同模型，用同一问题各问一遍，记差异；问 AI「我这段话多少 token」估成本",
+      record: "每学一个词记一行：分类 + 一句话解释 + 一个例子",
+      accept: "合上笔记能说出「主流的模型有哪几个、各自适合什么场景」",
+      tasks: ["两个模型同一问题对比", "Token 估算实验×2", "幻觉触发实验并记录", "术语卡填满 10 张"],
+      level: "L1", status: "todo",
+      paths: { plan: "", manual: "", prompt: "", tutorial: "" }
+    },
+    {
+      id: "m11", code: "1.1", stage: 1, name: "判得对：交叉验证 + 小步测试",
+      goal: "质检清单 + 小步测试 SOP",
+      learn: "交叉验证：关键事实用 2 个独立来源核对、要求 AI 给依据；小步测试：拆任务、单步验收、边界测试、对照测试",
+      practice: "拿 AI 给的一个「事实」，立刻用两种独立方法验证它；把一个大任务拆成 3 个可单独验收的小步",
+      record: "整理一份自己的交叉验证检查清单",
+      accept: "拿到 AI 给的一个「事实」，能立刻说出用哪两种方法验证它",
+      tasks: ["给「工具排名」做交叉验证", "大任务拆 3 小步", "边界测试 空/长/矛盾", "few-shot 对照测试选优"],
+      level: "L1", status: "doing",
+      paths: { plan: "", manual: "", prompt: "", tutorial: "" }
+    },
+    {
+      id: "m12", code: "1.2", stage: 1, name: "指挥得动：写清需求 + 追问迭代",
+      goal: "需求模板 + 追问话术",
+      learn: "需求四要素（背景/目标/约束/示例）；明确输出格式；few-shot 示例；追问三连；限定范围；自我检查",
+      practice: "给一个模糊需求，改写成四要素完整版，并连续追问 3 轮逼近目标",
+      record: "好用的提示词收集起来，每条附实测效果",
+      accept: "给一个模糊需求，能改写成四要素完整版，并连续追问 3 轮逼近目标",
+      tasks: ["四要素改写 3 个模糊需求", "追问三连实战留档", "实测提示词收集 3 条", "输出格式有无对照"],
+      level: "L1", status: "todo",
+      paths: { plan: "", manual: "", prompt: "", tutorial: "" }
+    },
+    {
+      id: "m13", code: "1.3", stage: 1, name: "文生图",
+      goal: "10 分钟出一套可用图",
+      learn: "即梦/可灵等工具入门；提示词结构化（主体+风格+构图+光线+画质）；风格参考图；局部重绘；批量出图",
+      practice: "用结构化提示词出一套风格统一的主题封面（内容自选：作品集/爱好/学习笔记）",
+      record: "最好用的图提示词结构记下来",
+      accept: "给需求，10 分钟内出一套可用图，风格统一、文字不翻车",
+      tasks: ["五段式提示词首图", "主题封面一套 3 张", "局部重绘练习", "批量 8 张筛选", "自选题海报 1 张"],
+      level: "L1", status: "todo",
+      paths: { plan: "", manual: "", prompt: "", tutorial: "" }
+    },
+    {
+      id: "m14", code: "1.4", stage: 1, name: "文生视频",
+      goal: "15-30 秒连贯短视频",
+      learn: "可灵等工具入门；分镜描述；镜头语言（推拉摇移）；图生视频；首尾帧一致性；续写",
+      practice: "把一个静态画面用「图生视频」做成动起来的小片段，再续写下一段验证连贯性",
+      record: "分镜写法记下来（画面/运镜/秒数）",
+      accept: "给文案/图，生成 15-30 秒短视频，镜头连贯、节奏对",
+      tasks: ["3-5 镜头分镜", "首帧图生视频", "尾帧接首帧续写", "产出 15-30 秒成片"],
+      level: "L1", status: "todo",
+      paths: { plan: "", manual: "", prompt: "", tutorial: "" }
+    },
+    {
+      id: "m15", code: "1.5", stage: 1, name: "辅助剪辑",
+      goal: "30 分钟剪出成片",
+      learn: "剪映等工具：自动字幕、卡点、BGM、转场、封面；AI 数字人/语音克隆了解即可",
+      practice: "拿一段现成素材，30 分钟内剪出带字幕和卡点的成片",
+      record: "成片参数（分辨率/时长/节奏）记成模板",
+      accept: "拿到素材，30 分钟内剪出成片，字幕/卡点/BGM/去冗余到位",
+      tasks: ["自动字幕+人工校对", "卡点 BGM 成片一条", "双版封面比较", "30 分钟计时挑战成片"],
+      level: "L1", status: "todo",
+      paths: { plan: "", manual: "", prompt: "", tutorial: "" }
+    },
+    {
+      id: "m16", code: "1.6", stage: 1, name: "Vibe Coding",
+      goal: "让 AI 写出可运行小工具",
+      learn: "Cursor 等 AI 编程工具；自然语言描述需求、验收 AI 代码、报错贴给 AI 修、边做边学基础语法",
+      practice: "用自然语言让 AI 写一个批量图片缩放工具，跑通、报错贴回修好",
+      record: "跑通的代码片段归档保存",
+      accept: "描述清楚需求，让 AI 写出可运行代码，报错能自己贴去修好",
+      tasks: ["四要素描述批量缩放工具并跑通", "报错原文贴回修复演练", "边界测试补防御", "跑通代码归档"],
+      level: "L1", status: "todo",
+      paths: { plan: "", manual: "", prompt: "", tutorial: "" }
+    },
+    {
+      id: "m17", code: "1.7", stage: 1, name: "Github 基础",
+      goal: "会搜 / 会下 / 会看开源项目",
+      learn: "GitHub 是什么；搜开源项目；Download ZIP / git clone；看 README 四块（简介/安装/用法/License）",
+      practice: "搜一个与当前学习相关的开源项目，下载并照 README 跑起来",
+      record: "好用的开源项目记成清单",
+      accept: "能独立完成：搜 → 下 → 看 README → 跑起来 四步",
+      tasks: ["关键词搜项目看 Star 与更新", "ZIP 下载照 README 跑通", "README 四块精读含 License", "报错三步排查实战"],
+      level: "L1", status: "todo",
+      paths: { plan: "", manual: "", prompt: "", tutorial: "" }
+    },
+    {
+      id: "m18", code: "1.8", stage: 1, name: "沉淀《AI 协作手册》",
+      goal: "一份自己能独立用的协作手册",
+      learn: "手册四块骨架：术语速查 / 判错流程 / 指挥模板 / 避坑清单；每条写触发场景",
+      practice: "把前七个模块的产出合成一份手册，并标注每条的触发场景",
+      record: "一周实战每日回填，手册只收实测过的内容",
+      accept: "合上手册，能说出自己遇到过的 3 类坑和对应解法",
+      tasks: ["四块骨架合成手册 v1", "逐条补触发场景", "一周实战每日回填"],
+      level: "L1", status: "todo",
+      paths: { plan: "", manual: "", prompt: "", tutorial: "" }
+    }
+  ],
+
+  // ---------- 每日专栏（示例 5 篇：date 唯一升序；moduleCode 对应 modules.code） ----------
+  "daily": [
+    {
+      id: "d1", date: "2026-09-03", moduleCode: "1.0",
+      title: "学 AI 先学这 5 个词：Token/幻觉/上下文/API/Key",
+      minutes: 15, source: "示例包 · 通识",
+      content: [
+        { h: "Token 是什么", p: "模型读文字的最小单位，中文大约一个字算 1-2 个 token。它按「输入+输出」双向计费，所以聊天记录越长越贵——同一个话题问久了，开新会话更省钱。" },
+        { h: "幻觉是什么", p: "模型一本正经地编造事实，最常见于：编数字、编书名/网址/版本号、编引用。它不是撒谎，是「预测下一个字」的天性，所以凡关键事实都要独立验证。" },
+        { h: "上下文窗口", p: "一次对话最多能装多少文字。窗口外的内容模型看不到，所以长文档要主动让它「只读某一段」或分次处理。" },
+        { h: "API 与 Key", p: "API 是程序调用模型的口子，Key 是通行证，相当于你的钱包密码。Key 一旦泄露别人能刷你的额度——绝不要发群里、提交到公开代码里。" },
+        { h: "今天怎么验收", p: "用一句话向朋友解释这四个词；能说出「为什么长对话会越来越贵」。" }
+      ],
+      quiz: [
+        { q: "长对话越来越贵的原因是什么？", a: "历史内容每次都重新计输入 token，双向计费" },
+        { q: "AI 编造书名/网址属于什么现象？", a: "幻觉，关键事实必须独立验证" }
+      ]
+    },
+    {
+      id: "d2", date: "2026-09-04", moduleCode: "1.1",
+      title: "AI 说的一定对吗？用交叉验证兜底",
+      minutes: 15, source: "示例包 · 通识",
+      content: [
+        { h: "最危险的不是错误，是你不知道它错了", p: "模型给的答案流畅自信，错觉上很像真的。对付它不靠「更懂」，靠一套固定动作：关键事实找 2 个独立来源核对。" },
+        { h: "验证成本分级", p: "不重要的事不用验；影响行动的事必须验；金额/合同/健康/合规属于最高级，宁可慢不要错。分级能让你把力气花在刀刃上。" },
+        { h: "怎么让 AI 更可靠", p: "① 要求「给出依据或来源」，它给不出来就说资料里没有；② 让它明确区分「确定/推测/不确定」三档；③ 不确定的事直接让它说不确定，别逼它圆。" },
+        { h: "小步测试", p: "大任务别一口吞：拆成能单独验收的小步，一步验一步。改一步错一步时用对照测试，只改一个变量，用证据选优。" },
+        { h: "今天怎么验收", p: "把 AI 给的一个「事实」当场用两个独立来源验证，写下哪一步省时、哪一步漏了。" }
+      ],
+      quiz: [
+        { q: "验证成本分几级？各举一例", a: "低=不用验；中=影响行动必验；高=金额合规宁慢勿错" },
+        { q: "小步测试的核心原则是什么？", a: "拆成可单独验收的小步，一步一验" }
+      ]
+    },
+    {
+      id: "d3", date: "2026-09-05", moduleCode: "1.2",
+      title: "需求四要素：让 AI 一次听懂你",
+      minutes: 15, source: "示例包 · 通识",
+      content: [
+        { h: "模糊需求为什么总翻车", p: "「帮我写个东西」——背景没有、目标没有、约束没有，模型只能猜，猜错是常态不是意外。把需求写清楚，是最便宜的提效手段。" },
+        { h: "四要素模板", p: "① 背景：我在做什么、给谁用；② 目标：要一份什么，达到什么标准；③ 约束：字数/风格/不能包含什么；④ 示例：给一个大概样子或范例。" },
+        { h: "用案例对比", p: "「帮我写段自我介绍」 vs 「背景：我转行做内容，目标：100 字适合发作品集的自我介绍，风格：真诚不浮夸，示例：我不写模板话术…」——后者模型一次就能用。" },
+        { h: "追问三连", p: "第一版不满意别重写，问三句：哪里不对？应该往哪个方向改？给个改进版。多数情况第三轮就对了。" },
+        { h: "今天怎么验收", p: "拿三个模糊需求当场改写成四要素版并让 AI 执行，比较改写前后输出的差距。" }
+      ],
+      quiz: [
+        { q: "需求四要素是哪四个？", a: "背景 / 目标 / 约束 / 示例" },
+        { q: "第一版不满意，正确做法是？", a: "追问三连迭代，而不是推倒重写" }
+      ]
+    },
+    {
+      id: "d4", date: "2026-09-06", moduleCode: "1.3",
+      title: "文生图提示词结构化：主体+风格+构图+光线+画质",
+      minutes: 15, source: "示例包 · 通识",
+      content: [
+        { h: "为什么你的图总不对味", p: "多数人只写「一只猫」，信息太少模型自由发挥。把提示词拆成五个维度，每维补一句，输出立刻稳定。" },
+        { h: "五段式公式", p: "主体（什么，动作/状态）+ 风格（插画/写实/3D…）+ 构图（特写/全景/居中）+ 光线（柔光/逆光/暖色调）+ 画质（高清/细节丰富）。例：「一只戴宇航头盔的橘猫，3D 皮克斯风，特写，柔光，8K」。" },
+        { h: "风格参考图是捷径", p: "文字描述风格容易跑偏，直接丢一张参考图让它模仿。做系列图（封面/一套知识卡）固定同一张参考图，风格统一最省事。" },
+        { h: "字多就翻车", p: "AI 画中文字经常乱。要文案的图，让 AI 留白，用剪映/排版工具自己加字。" },
+        { h: "今天怎么验收", p: "用五段式出第一张图并记录「改了什么维度效果变好」，存成自己的提示词结构卡。" }
+      ],
+      quiz: [
+        { q: "五段式提示词是哪五段？", a: "主体 / 风格 / 构图 / 光线 / 画质" },
+        { q: "系列图保持风格统一最省事的方法？", a: "固定用同一张风格参考图" }
+      ]
+    },
+    {
+      id: "d5", date: "2026-09-07", moduleCode: "1.4",
+      title: "文生视频基本功：分镜与图生视频",
+      minutes: 15, source: "示例包 · 通识",
+      content: [
+        { h: "别一上来就写一大段", p: "文生视频靠文字驱动，一段话讲不清一个镜头。先拆分镜：每个镜头写清画面内容、运镜方式、大致秒数，3-5 个镜头拼成一条。" },
+        { h: "分镜怎么写", p: "每镜三行：画面（谁在做什么）+ 运镜（推近/拉远/环绕/固定）+ 时长。例：「橘猫从太空舱爬出，镜头缓缓推近特写，3 秒」。" },
+        { h: "图生视频最稳", p: "先文生图定下首帧（画面完全可控），再让首帧动起来——比纯文生视频稳定得多。长片段用「上一段尾帧作下一段首帧」续写。" },
+        { h: "先给镜头再给脚本", p: "顺序反过来：先想好要哪几个镜头（节奏），再补每镜的运镜词。镜头语言比文笔重要。" },
+        { h: "今天怎么验收", p: "写一个 3 镜分镜，用图生视频让一张静态图动起来，检查画面是否连贯。" }
+      ],
+      quiz: [
+        { q: "为什么推荐图生视频而非纯文字？", a: "先文生图定首帧，画面可控更稳定" },
+        { q: "分镜每镜要写清哪三样？", a: "画面内容 / 运镜方式 / 时长" }
+      ]
+    }
+  ],
+
+  // ---------- 手册（示例，desc 即卡片摘要；file 留空=不依赖本地文件） ----------
+  "manuals": [
+    { id: "mn01", cat: "元能力", name: "提示词写作手册", desc: "需求四要素 + 输出格式 + few-shot + 追问三连 + 自检清单，写提示词前先翻这一页。", scene: "任何要给 AI 下任务之前", file: "", reuse: "copy" },
+    { id: "mn02", cat: "元能力", name: "交叉验证检查清单", desc: "关键事实用 2 个独立来源核对的固定动作清单；按验证成本分级决定用力程度。", scene: "AI 给了会影响行动的事实/数字时", file: "", reuse: "copy" },
+    { id: "mn03", cat: "三件套", name: "文生图速查卡", desc: "五段式提示词 + 风格参考 + 局部重绘 + 批量筛选，10 分钟出一套可用图。", scene: "做封面 / 配图 / 海报", file: "", reuse: "copy" }
+  ],
+
+  "prompts": [
+    { id: "pt01", cat: "通用", name: "需求四要素模板", desc: "把模糊需求改写成背景/目标/约束/示例四段式，AI 一次听懂。", file: "", reuse: "copy" },
+    { id: "pt02", cat: "通用", name: "追问三连话术", desc: "哪里不对 / 往哪改 / 给改进版——第一版不满意时用这三句迭代。", file: "", reuse: "copy" },
+    { id: "pt03", cat: "文生图", name: "文生图五段式", desc: "主体+风格+构图+光线+画质 的结构化写法。", file: "", reuse: "adapt" }
+  ],
+
+  "glossary": [
+    { id: "gl01", cat: "术语", name: "AI 术语速查", desc: "Token/幻觉/上下文窗口/API/Key 等高频词一句话解释。", file: "", reuse: "understand" },
+    { id: "gl02", cat: "判错", name: "交叉验证三步", desc: "找两个独立来源 → 对比结论 → 不一致时查原始出处。", file: "", reuse: "copy" }
+  ],
+
+  "tutorials": [
+    { id: "tu01", cat: "元能力", name: "提示工程基础", stage: 1, moduleCode: "1.2", sections: "官方免费教程选一（Anthropic 交互式教程）", minutes: 90, outcome: "掌握提示词系统写法", file: "" },
+    { id: "tu02", cat: "三件套", name: "文生图工具课", stage: 1, moduleCode: "1.3", sections: "官方新手引导 + 社区案例", minutes: 60, outcome: "10 分钟出风格统一图", file: "" }
+  ],
+
+  // ---------- 工具平台（时效信息以官方页为准，verifiedAt 为核实日期） ----------
+  "platforms": [
+    { id: "pf01", cat: "文生图", name: "即梦 AI", logo: "即", desc: "国产文生图，中文友好，出图快。", scene: "封面/配图/海报", tips: ["提示词按五段结构化", "系列内容固定同一张风格参考", "文字留白自己排"], link: "https://jimeng.jianying.com/", verifiedAt: "2026-09-03" },
+    { id: "pf02", cat: "文生视频", name: "可灵 AI", logo: "可", desc: "国产文生视频，图生视频与首尾帧一致性好。", scene: "15-30 秒短片", tips: ["先文生图定首帧再图生视频", "尾帧接首帧续写长片段", "额度消耗大先核免费额度"], link: "https://klingai.com/", verifiedAt: "2026-09-03" },
+    { id: "pf03", cat: "对话模型", name: "DeepSeek", logo: "D", desc: "国产开源推理模型，性价比高。", scene: "问答/推理/代码", tips: ["事实类回答做交叉验证", "长对话定期开新会话", "API Key 绝不外泄"], link: "https://chat.deepseek.com/", verifiedAt: "2026-09-03" },
+    { id: "pf04", cat: "对话模型", name: "豆包", logo: "豆", desc: "免费多模态，语音交互体验好。", scene: "碎片时间语音问答", tips: ["适合语音提问", "与另一模型互为验证源"], link: "https://www.doubao.com/", verifiedAt: "2026-09-03" }
+  ]
+};
+
+</script>
+<script>
+/* ================================================================
+   AI 学习工作台 · 主逻辑
+   规范：渲染函数禁止互调；统一 route() 调度；事件委托 + data-action；
+        所有插值经 esc() 转义；外链 target=_blank rel=noopener
+   ================================================================ */
+(function(){
+"use strict";
+
+/* ---------- S7 兜底：content.js 加载失败（file:// 被企业策略拦截等场景） ---------- */
+if (!window.__WB_CONTENT__) {
+  document.getElementById("view").innerHTML =
+    '<div class="card empty" style="margin-top:40px">'
+    + '<div class="e-t" style="font-weight:600;color:var(--danger)">内容包 content.js 加载失败</div>'
+    + '<div class="e-d" style="margin-top:10px;line-height:2">'
+    + '请确认 content.js 与本页面在同一文件夹。<br>'
+    + '若是双击打开（file://）且内容仍不显示，可能是浏览器/企业策略拦截了本地子资源，<br>'
+    + '此时请改用本地静态服务器打开（例如在资料库目录运行 <b>python -m http.server</b> 后访问 localhost 端口）。'
+    + '</div></div>';
+  return;
+}
+
+/* ---------- 常量与状态 ---------- */
+var SEG_DEFS = [
+  { key:"learn",    name:"学", minutes:15 },
+  { key:"practice", name:"练", minutes:20 },
+  { key:"record",   name:"记", minutes:15 },
+  { key:"test",     name:"测", minutes:10 }
+];
+var BASE_TEMPLATES = tm("templates", 2); // 首页「已沉淀模板」统计基线（08-模板库 文件数，可换领域调整）
+
+var LS = {
+  progress:"wb_ai_progress", read:"wb_ai_read", fav:"wb_ai_fav",
+  checkin:"wb_ai_checkin", seg:"wb_ai_daily_seg", root:"wb_ai_root",
+  custom:"wb_ai_custom", stage:"wb_ai_stage", stageDay:"wb_ai_stageDay",
+  ai:"wb_ai_ai", sysPrompt:"wb_ai_sysprompt"
+};
+
+/* AI 学习教练：默认系统提示词（设置页可编辑）。约束来自资料库硬约定：给依据、不编造、控长度 */
+var DEFAULT_SYS_PROMPT = [
+"你是「AI 学习工作台」的学习教练。",
+"规则：",
+"1) 优先基于下面「资料上下文」回答；上下文里没有的内容，先说『资料里没有，以下是通用知识』再回答。",
+"2) 关键事实必须给出依据或来源；不确定就直接说不确定，禁止编造任何数字、链接、版本号。",
+"3) 回答控制在 400 字以内，口语化，一次只讲清楚一件事。",
+"4) 用户当前学习模块：{module}",
+"",
+"资料上下文：",
+"{context}"
+].join("\n");
+
+/* AI 配置默认值：DeepSeek 开箱即用（用户只需填自己的 Key） */
+var DEFAULT_AI = { base:"https://api.deepseek.com/v1", key:"", model:"deepseek-chat", temp:0.7 };
+
+var C = window.__WB_CONTENT__ || { modules:[], daily:[], manuals:[], prompts:[], glossary:[], tutorials:[], platforms:[], profile:{} };
+
+/* 主题读取层（开源化）：换领域只需改 content.theme；缺省回退 AI 学习版默认文案 */
+var TH = C.theme || {};
+function tm(k, def){ return TH[k] != null ? TH[k] : def; }
+var CL = tm("contentLabel", "专栏");   // 每日内容的叫法（AI 版叫「专栏」，换领域可改「文章/卡片」等）
+
+function lsGet(k, def){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; }catch(e){ return def; } }
+function lsSet(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ toast("存储失败：" + e.message); } }
+
+var state = {
+  route: "home",
+  manualCat: "全部",
+  toolCat: "全部",
+  learnStage: lsGet(LS.stage, 1),
+  progress: lsGet(LS.progress, null) || (function(){
+    var p = {}; (C.modules||[]).forEach(function(m){ p[m.id] = m.status || "todo"; }); return p;
+  })(),
+  read: lsGet(LS.read, []),
+  fav: lsGet(LS.fav, { platforms:[], tutorials:[] }),
+  checkin: lsGet(LS.checkin, []),
+  seg: lsGet(LS.seg, {}),
+  custom: lsGet(LS.custom, { platforms:[], tutorials:[] }),
+  stageDay: lsGet(LS.stageDay, (window.__WB_CONTENT__.profile||{}).stageDay||1),
+  ai: lsGet(LS.ai, DEFAULT_AI),
+  sysPrompt: lsGet(LS.sysPrompt, DEFAULT_SYS_PROMPT),
+  chat: [],          // 对话仅存内存，不落盘
+  drawer: null
+};
+
+function save(k){ lsSet(k, state[k.key || k]); }
+function saveAll(){
+  lsSet(LS.progress, state.progress); lsSet(LS.read, state.read);
+  lsSet(LS.fav, state.fav); lsSet(LS.checkin, state.checkin);
+  lsSet(LS.seg, state.seg); lsSet(LS.custom, state.custom); lsSet(LS.stage, state.learnStage);
+}
+
+/* ---------- 工具函数 ---------- */
+function esc(s){
+  return String(s==null?"":s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function todayStr(){
+  var d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function yesterdayStr(){
+  var d = new Date(); d.setDate(d.getDate()-1);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+/* 报告 4.3 指定的 todayDaily —— 按日期匹配，断档回退最近一篇 */
+function todayDaily(){
+  var t = todayStr(), list = C.daily || [];
+  for (var i=0;i<list.length;i++){ if(list[i].date === t) return list[i]; }
+  var past = list.filter(function(d){ return d.date <= t; });
+  return past.length ? past[past.length-1] : (list[0] || null);
+}
+/* 运行模式：file:// 打开 = 本机模式（直跳资料库）；公网/APK = 应用模式（读随网页部署的镜像） */
+var APP_MODE = location.protocol !== "file:";
+function rootBase(){
+  if (APP_MODE) return "content/";   // 部署目录内的资料镜像
+  var saved = localStorage.getItem(LS.root);
+  // 本机模式资料库根目录：优先用户设置；content.js 可提供 WB_ROOT；都没有则为空（file 类按钮自动隐藏）
+  return saved ? saved.replace(/["\s]/g,"") : (window.WB_ROOT || "");
+}
+function wbPath(rel){ return rel ? (rootBase() + rel) : ""; }
+function moduleByCode(code){ return (C.modules||[]).filter(function(m){ return m.code===code; })[0]; }
+function currentModule(){
+  var doing = (C.modules||[]).filter(function(m){ return state.progress[m.id]==="doing"; });
+  if (doing.length) return doing[0];
+  var todo = (C.modules||[]).filter(function(m){ return !state.progress[m.id] || state.progress[m.id]==="todo"; });
+  return todo.length ? todo[0] : (C.modules||[])[0];
+}
+function calcStreak(){
+  var set = {}; state.checkin.forEach(function(d){ set[d]=1; });
+  var n = 0, d = new Date();
+  // 今天未打卡时，从昨天起算
+  if(!set[todayStr()]) d.setDate(d.getDate()-1);
+  for(;;){
+    var k = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    if(set[k]){ n++; d.setDate(d.getDate()-1); } else break;
+  }
+  return n;
+}
+function stats(){
+  var done = (C.modules||[]).filter(function(m){ return state.progress[m.id]==="done"; }).length;
+  var minutes = 0; state.read.forEach(function(id){
+    var d = (C.daily||[]).filter(function(x){ return x.id===id; })[0];
+    if(d) minutes += (d.minutes||15);
+  });
+  var segToday = state.seg[todayStr()] || {};
+  var segCount = SEG_DEFS.filter(function(s){ return segToday[s.key]; }).length;
+  var favCount = state.fav.platforms.length + state.fav.tutorials.length;
+  return {
+    streak: calcStreak(),
+    doneModules: done,
+    hours: Math.round(minutes/6)/10,
+    templates: BASE_TEMPLATES + state.custom.platforms.length + state.custom.tutorials.length,
+    segCount: segCount, favCount: favCount,
+    checkedIn: state.checkin.indexOf(todayStr()) >= 0
+  };
+}
+function unreadBacklog(){
+  // 今天及更早、未读的专栏 = 顺延待办
+  var t = todayStr();
+  return (C.daily||[]).filter(function(d){
+    return d.date <= t && state.read.indexOf(d.id) < 0;
+  });
+}
+function dailyRemain(){
+  var t = todayStr();
+  return (C.daily||[]).filter(function(d){ return d.date >= t; }).length;
+}
+function allPlatforms(){ return (C.platforms||[]).concat(state.custom.platforms); }
+function allTutorials(){ return (C.tutorials||[]).concat(state.custom.tutorials); }
+
+var ICONS = {
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>',
+  learn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M4 19a2 2 0 002 2h13"/></svg>',
+  manual:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10.5 5 8.4 4.5 6 4.5c-1 0-2 .1-3 .4v13.6c1-.3 2-.4 3-.4 2.4 0 4.5.5 6 2 1.5-1.5 3.6-2 6-2 1 0 2 .1 3 .4V4.9c-1-.3-2-.4-3-.4-2.4 0-4.5.5-6 2z"/><path d="M12 6.5v13.6"/></svg>',
+  tools:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4.5 4.5 0 00-6 6L3 18l3 3 5.7-5.7a4.5 4.5 0 006-6L14.5 12l-2.5-2.5z"/></svg>',
+  mine:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>',
+  arrow:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.8l2.8 5.8 6.2.9-4.5 4.4 1 6.3-5.5-3-5.5 3 1-6.3L3 9.5l6.2-.9z"/></svg>',
+  x:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+};
+
+var NAVS = [
+  { key:"home",   name:"今日", icon:ICONS.home },
+  { key:"learn",  name:"学习", icon:ICONS.learn },
+  { key:"manual", name:"手册", icon:ICONS.manual },
+  { key:"tools",  name:"工具", icon:ICONS.tools },
+  { key:"mine",   name:"我的", icon:ICONS.mine }
+];
+
+/* ---------- 静态框架（导航，一次性渲染） ---------- */
+function renderNav(){
+  document.getElementById("nav").innerHTML = NAVS.map(function(n){
+    return '<div class="nav-item'+(state.route===n.key?" active":"")+'" data-action="nav" data-route="'+n.key+'">'
+      + n.icon + '<span>'+n.name+'</span></div>';
+  }).join("");
+  document.getElementById("tabbar").innerHTML = NAVS.map(function(n){
+    return '<div class="tab-item'+(state.route===n.key?" active":"")+'" data-action="nav" data-route="'+n.key+'">'
+      + n.icon + '<span>'+n.name+'</span></div>';
+  }).join("");
+}
+
+/* ---------- 首页 ---------- */
+function renderHome(){
+  var m = currentModule();
+  var st = stats();
+  var segToday = state.seg[todayStr()] || {};
+  var td = todayDaily();
+  var backlog = unreadBacklog();
+  var remainMin = SEG_DEFS.reduce(function(s,d){ return s + (segToday[d.key]?0:d.minutes); },0);
+
+  var html = '';
+
+  // Hero（复刻参考：渐变 + 徽章 + 问候）
+  html += '<div class="hero">'
+    + '<div class="hero-badge">' + todayStr() + ' · ' + esc(tm("badgeLabel","今日 · 第 ") + (state.stageDay||1)) + ' 期 · 内容已更新 ' + (C.daily||[]).length + ' 篇</div>'
+    + '<h1>' + esc(tm("greeting","你好，学习者")) + '</h1>'
+    + '<p>' + esc(tm("greetingSub","今天也来推进一点：完成今天的单元，读一篇内容，把产出记下来。")) + '</p>'
+    + '</div>';
+
+  // 今日任务卡
+  html += '<div class="sec-head"><div><div class="sec-title">今日任务</div>'
+    + '<div class="sec-desc">按「学15 → 练20 → 记15 → 测10」走完一个单元</div></div>'
+    + '<button class="btn-ghost" data-action="goto" data-route="learn">进入学习</button></div>';
+  if (m) {
+    html += '<div class="card pad task-card">'
+      + '<div class="task-meta"><span class="tag tag-blue">模块 ' + esc(m.code) + '</span>'
+      + '<span class="tag '+(st.checkedIn?"tag-green":"tag-orange")+'">'+(st.checkedIn?"今日已打卡":"今日待打卡")+'</span>'
+      + '<span class="tag tag-gray">熟练度 ' + esc(m.level||"L1") + '</span></div>'
+      + '<div class="task-title">' + esc(m.name) + '</div>'
+      + '<div class="task-goal">目标产出：' + esc(m.goal) + '</div>'
+      + '<div class="seg-bar">' + SEG_DEFS.map(function(d){
+          var on = !!segToday[d.key];
+          return '<div class="seg'+(on?" done":"")+'" data-action="seg-toggle" data-seg="'+d.key+'" role="button">'
+            + '<div class="seg-t">'+(on?"✓ ":"")+esc(d.name)+' '+d.minutes+"'</div>"
+            + '<div class="seg-m">'+(on?"已完成":"未完成")+'</div></div>';
+        }).join('') + '</div>'
+      + '<div class="remain">'+(st.checkedIn
+          ? '今日四段已全部完成，打卡成功。明天继续下一个单元。'
+          : '剩余 <b>'+remainMin+'</b> 分钟 · 点击上方四段进行勾选')+'</div>'
+      + '</div>';
+  }
+
+  // 今天要处理（顺延）
+  html += '<div class="sec-head"><div><div class="sec-title">今天要处理</div>'
+    + '<div class="sec-desc">昨日未完成的会顺延到这里，别攒太多</div></div></div>';
+  if (backlog.length) {
+    html += '<div class="alert alert-red"><span class="badge-dot" style="background:var(--danger)"></span>'
+      + '有 <b>' + backlog.length + '</b> 篇' + CL + '还没读' + (backlog.length>1 && backlog[0].date!==todayStr() ? '，最早的一篇是 ' + backlog[0].date : '') + '。</div>';
+    html += backlog.slice(0,3).map(function(d){
+      var isToday = d.date===todayStr();
+      return '<div class="list-card" data-action="open-daily" data-id="'+esc(d.id)+'">'
+        + '<div class="lc-icon'+(isToday?"":" gray")+'">'+esc((moduleByCode(d.moduleCode)||{}).code||CL)+'</div>'
+        + '<div class="lc-body"><div class="lc-title">'+esc(d.title)
+        + '<span class="tag'+(isToday?" tag-blue":" tag-red")+'">'+(isToday?"今日":"顺延")+'</span></div>'
+        + '<div class="lc-desc">'+esc(d.date)+' · '+d.minutes+' 分钟 · '+esc(d.source)+'</div></div>'
+        + '<div class="lc-arrow">'+ICONS.arrow+'</div></div>';
+    }).join('');
+    if (backlog.length>3) html += '<div class="sec-desc" style="margin:4px 2px 0">还有 '+(backlog.length-3)+' 篇，去「学习」页查看全部。</div>';
+  } else {
+    html += '<div class="card pad" style="text-align:center;color:var(--ok);font-size:13.5px">全部清完，没有顺延事项。</div>';
+  }
+
+  // 统计
+  html += '<div class="sec-head"><div><div class="sec-title">学习统计</div></div>'
+    + '<button class="btn-ghost" data-action="goto" data-route="mine">查看我的</button></div>'
+    + '<div class="stat-row">'
+    + statCard(st.streak,"连续打卡","bar-blue")
+    + statCard(st.doneModules+" / "+(C.modules||[]).length,"已完成模块","bar-green")
+    + statCard(st.hours,"累计学时","bar-yellow")
+    + statCard(st.templates,"已沉淀模板","bar-purple")
+    + '</div>';
+
+  // 快捷入口（来自主题配置，无配置则不显示）
+  var homeQl = tm("quickLinks", []);
+  if (homeQl.length){
+    html += '<div class="sec-head"><div><div class="sec-title">快捷入口</div></div></div>' + quickLinksHtml(homeQl);
+  }
+
+  // 备份区（与「我的」复用同一逻辑）
+  html += '<div class="sec-head"><div><div class="sec-title">数据备份</div>'
+    + '<div class="sec-desc">数据只存在本机浏览器，清缓存会丢，定期导出</div></div></div>'
+    + backupHtml();
+
+  // 余量预警
+  var rm = dailyRemain();
+  if (rm < 7) {
+    html += '<div style="height:14px"></div><div class="alert alert-warn">'
+      + CL+'余量仅 <b>'+rm+'</b> 天（建议 ≥7 天）'
+      + '<button class="btn-ghost btn-sm" style="margin-left:auto" data-action="copy-topic-prompt">复制选题提示词</button></div>';
+  }
+
+  return html;
+}
+function statCard(num,label,bar){
+  return '<div class="stat-card"><div class="stat-num">'+num+'</div><div class="stat-label">'+label+'</div><div class="stat-bar '+bar+'"></div></div>';
+}
+function rowItem(title,desc,right){
+  return '<div class="row-item"><div><div class="row-title">'+title+'</div><div class="row-desc">'+esc(desc)+'</div></div>'+right+'</div>';
+}
+/* 快捷入口：入口列表来自 theme，可随主题包自定义 */
+function quickLinksHtml(list){
+  if (!list || !list.length) return '';
+  return '<div class="card pad">' + list.map(function(q){
+    var pre = q.hint ? '<span class="tag tag-orange" style="margin-right:6px">' + esc(q.hint) + '</span>' : '';
+    var btn = (q.act === "copy")
+      ? '<button class="btn-solid btn-sm" data-action="copy-daily-template">复制模板</button>'
+      : '<button class="btn-ghost btn-sm" data-action="open-file" data-file="' + esc(q.file || "") + '">打开</button>';
+    return '<div class="row-item"><div><div class="row-title">' + pre + esc(q.name) + '</div>'
+      + '<div class="row-desc">' + esc(q.desc || "") + '</div></div>' + btn + '</div>';
+  }).join('') + '</div>';
+}
+function backupHtml(){
+  return '<div class="card pad">'
+    + rowItem("导出 JSON 快照","下载全部学习数据，换设备时可导入恢复",'<button class="btn-solid btn-sm" data-action="export-data">导出</button>')
+    + rowItem("导入恢复数据","选择之前导出的 JSON 文件，将覆盖当前数据",'<label class="btn-ghost btn-sm" style="cursor:pointer">导入<input type="file" accept=".json,application/json" style="display:none" data-action="import-file"></label>')
+    + rowItem("清空本机数据","删除全部进度/打卡/收藏，课程内容保留",'<button class="btn-danger btn-sm" data-action="clear-data">清空</button>')
+    + '</div>';
+}
+
+/* ---------- 学习页 ---------- */
+function renderLearn(){
+  // 阶段集合从 modules 动态聚合（骨架不再假定固定期数）
+  var stageIds = [];
+  (C.modules||[]).forEach(function(m){ if (stageIds.indexOf(m.stage) < 0) stageIds.push(m.stage); });
+  stageIds.sort(function(a,b){ return a-b; });
+  if (stageIds.length && stageIds.indexOf(state.learnStage) < 0) state.learnStage = stageIds[0];
+  var stageNames = tm("stageNames", ["一","二","三","四"]);
+  var html = '<div class="sec-head"><div><div class="sec-title">学习</div>'
+    + '<div class="sec-desc">按阶段推进 · 每个模块内循环「学练记测」</div></div></div>'
+    + '<div class="chips">' + stageIds.map(function(s){
+      var nm = stageNames[s-1] || ("第"+s+"期");
+      return '<div class="chip'+(state.learnStage===s?" active":"")+'" data-action="stage" data-stage="'+s+'">' + s + ' · ' + esc(nm) + '</div>';
+    }).join('') + '</div>'
+    + '<input class="search" id="learnSearch" placeholder="搜索模块 / ' + CL + '…" value="'+esc(state.learnQ||"")+'">'
+    + '<div id="learnList">'+learnBodyHtml(state.learnQ||"")+'</div>';
+  return html;
+}
+function learnBodyHtml(q){
+  q = (q||"").trim().toLowerCase();
+  var mods = (C.modules||[]).filter(function(m){ return m.stage===state.learnStage; });
+  var fMods = q ? mods.filter(function(m){ return (m.name+" "+m.code+" "+m.goal).toLowerCase().indexOf(q)>=0; }) : mods;
+  var html = '';
+  if (!mods.length) {
+    return '<div class="card empty"><div class="e-icon">'+ICONS.learn+'</div>'
+      + '<div class="e-t">本期内容尚未配置</div>'
+      + '<div class="e-d">在 content.js 的 modules 中添加该阶段的模块，或查看仓库的主题包说明</div>'
+      + '<button class="btn-ghost" data-action="goto" data-route="manual">去手册页看看</button></div>';
+  }
+  // 步骤条（不受搜索影响）
+  html += '<div class="step-strip">' + mods.map(function(m){
+    var s = state.progress[m.id]||"todo";
+    return '<div class="step-cell '+s+'"><div class="sc-code">'+esc(m.code)+'</div>'
+      + '<div>'+(s==="done"?"已完成":(s==="doing"?"进行中":"未开始"))+'</div></div>';
+  }).join('') + '</div>';
+
+  if (!fMods.length) {
+    html += '<div class="empty" style="padding:22px"><div class="e-t">没有匹配的模块</div></div>';
+  } else {
+    html += fMods.map(function(m){
+      var s = state.progress[m.id]||"todo";
+      var iconCls = s==="done"?"green":(s==="doing"?"":"gray");
+      return '<div class="list-card" data-action="open-module" data-id="'+esc(m.id)+'">'
+        + '<div class="lc-icon '+iconCls+'">'+esc(m.code)+'</div>'
+        + '<div class="lc-body"><div class="lc-title">'+esc(m.name)
+        + '<span class="tag '+(s==="done"?"tag-green":(s==="doing"?"tag-blue":"tag-gray"))+'">'
+        + (s==="done"?"已完成":(s==="doing"?"进行中":"未开始"))+'</span>'
+        + '<span class="tag tag-gray">'+esc(m.level||"L1")+'</span></div>'
+        + '<div class="lc-desc">产出：'+esc(m.goal)+'</div></div>'
+        + '<div class="lc-right"><button class="btn-ghost btn-sm" data-action="open-module-file" data-id="'+esc(m.id)+'">本地文件</button></div>'
+        + '<div class="lc-arrow">'+ICONS.arrow+'</div></div>';
+    }).join('');
+  }
+
+  // 专栏余量预警
+  var rm = dailyRemain();
+  if (rm < 7) {
+    html += '<div class="alert alert-warn">'+CL+'余量仅 <b>'+rm+'</b> 天，用内容生成提示词补一批。</div>';
+  }
+
+  // 专栏列表（今日置顶；受搜索过滤）
+  var t = todayStr();
+  var sorted = (C.daily||[]).slice().sort(function(a,b){ return a.date===t?-1:(b.date===t?1:(a.date<b.date?1:-1)); });
+  if (q) sorted = sorted.filter(function(d){ return (d.title+" "+d.moduleCode+" "+d.date).toLowerCase().indexOf(q)>=0; });
+  html += '<div class="sec-head"><div><div class="sec-title">每日' + CL + '</div>'
+    + '<div class="sec-desc">每天一篇，短时间读完，读完走四段</div></div></div>';
+  html += sorted.length ? sorted.map(function(d){
+    var isToday = d.date===t;
+    var isRead = state.read.indexOf(d.id)>=0;
+    return '<div class="list-card" data-action="open-daily" data-id="'+esc(d.id)+'"'+(isToday?' style="border-color:var(--primary-light)"':'')+'>'
+      + '<div class="lc-icon'+(isToday?"":" gray")+'">'+esc(d.date.slice(5).replace("-","/"))+'</div>'
+      + '<div class="lc-body"><div class="lc-title">'+esc(d.title)
+      + (isToday?'<span class="tag tag-blue">今日</span>':'')
+      + (isRead?'<span class="tag tag-green">已读</span>':'')+'</div>'
+      + '<div class="lc-desc">'+esc(d.date)+' · '+d.minutes+' 分钟 · 模块 '+esc(d.moduleCode)+'</div></div>'
+      + '<div class="lc-arrow">'+ICONS.arrow+'</div></div>';
+  }).join('') : '<div class="empty" style="padding:22px"><div class="e-t">没有匹配的' + CL + '</div></div>';
+  return html;
+}
+
+/* ---------- 手册页 ---------- */
+function manualItems(){
+  var items = []
+    .concat((C.manuals||[]).map(function(x){ x._k="mn"; return x; }))
+    .concat((C.prompts||[]).map(function(x){ x._k="pt"; return x; }))
+    .concat((C.glossary||[]).map(function(x){ x._k="gl"; return x; }));
+  if (state.manualCat==="手册SOP") items = items.filter(function(x){ return x._k==="mn"; });
+  if (state.manualCat==="提示词库") items = items.filter(function(x){ return x._k==="pt"; });
+  if (state.manualCat==="术语判错") items = items.filter(function(x){ return x._k==="gl"; });
+  return items;
+}
+function manualListHtml(q){
+  q = (q||"").trim().toLowerCase();
+  var items = manualItems();
+  if (q) items = items.filter(function(x){ return (x.name+" "+x.desc+" "+(x.cat||"")).toLowerCase().indexOf(q)>=0; });
+  if (!items.length) return '<div class="empty" style="padding:26px"><div class="e-t">没有匹配的内容</div><div class="e-d">换个关键词试试</div></div>';
+  var reuseTag = { copy:"tag-green", adapt:"tag-orange", understand:"tag-gray" };
+  var reuseName = { copy:"copy 直接抄", adapt:"adapt 要改", understand:"understand 理解" };
+  return '<div class="grid-2">' + items.map(function(x){
+    return '<div class="list-card" style="margin-bottom:0" data-action="open-item" data-kind="'+x._k+'" data-id="'+esc(x.id)+'">'
+      + '<div class="lc-icon'+(x._k==="pt"?" gray":"")+'">'+esc(x.name.slice(0,1))+'</div>'
+      + '<div class="lc-body"><div class="lc-title">'+esc(x.name)+'</div>'
+      + '<div class="lc-desc">'+esc(x.desc)+'</div>'
+      + '<div style="margin-top:6px"><span class="tag '+(reuseTag[x.reuse]||"tag-gray")+'">'+(reuseName[x.reuse]||esc(x.reuse))+'</span></div></div>'
+      + '<div class="lc-arrow">'+ICONS.arrow+'</div></div>';
+  }).join('') + '</div>';
+}
+function renderManual(){
+  var cats = ["全部","手册SOP","提示词库","术语判错"];
+  return '<div class="sec-head"><div><div class="sec-title">手册</div>'
+    + '<div class="sec-desc">SOP / 提示词 / 判错清单，干活前先查一份</div></div></div>'
+    + '<div class="chips">' + cats.map(function(c){
+        return '<div class="chip'+(state.manualCat===c?" active":"")+'" data-action="manual-cat" data-cat="'+esc(c)+'">'+esc(c)+'</div>';
+      }).join('') + '</div>'
+    + '<input class="search" id="manualSearch" placeholder="搜索名称 / 说明 / 分类…" value="'+esc(state.manualQ||"")+'">'
+    + '<div id="manualList">'+manualListHtml(state.manualQ||"")+'</div>';
+}
+
+/* ---------- 工具页 ---------- */
+function toolsListHtml(q){
+  q = (q||"").trim().toLowerCase();
+  var plats = state.toolCat==="全部" ? allPlatforms() : allPlatforms().filter(function(p){ return p.cat===state.toolCat; });
+  if (q) plats = plats.filter(function(p){ return (p.name+" "+p.desc+" "+p.cat+" "+(p.scene||"")).toLowerCase().indexOf(q)>=0; });
+  var tus = allTutorials();
+  if (q) tus = tus.filter(function(t){ return (t.name+" "+(t.sections||"")+" "+t.cat+" "+(t.outcome||"")).toLowerCase().indexOf(q)>=0; });
+
+  var html = '<div class="sec-head" style="margin-top:4px"><div><div class="sec-title">AI 平台库</div>'
+    + '<div class="sec-desc">适用场景 + 实操技巧，时效信息以官方页为准</div></div></div>';
+  html += plats.length ? '<div class="grid-2">' + plats.map(function(p){
+    var on = state.fav.platforms.indexOf(p.id)>=0;
+    return '<div class="list-card" style="margin-bottom:0" data-action="open-item" data-kind="pf" data-id="'+esc(p.id)+'">'
+      + '<div class="lc-icon">'+esc(p.logo||p.name.slice(0,1))+'</div>'
+      + '<div class="lc-body"><div class="lc-title">'+esc(p.name)+'<span class="st">'+esc(p.cat)+'</span></div>'
+      + '<div class="lc-desc">'+esc(p.desc)+'</div></div>'
+      + '<div class="lc-right"><button class="fav-btn'+(on?" on":"")+'" data-action="fav" data-kind="platforms" data-id="'+esc(p.id)+'">'+ICONS.star+'</button></div>'
+      + '<div class="lc-arrow">'+ICONS.arrow+'</div></div>';
+  }).join('') + '</div>' : '<div class="empty" style="padding:22px"><div class="e-t">没有匹配的平台</div></div>';
+
+  html += '<div class="sec-head"><div><div class="sec-title">教程导航</div>'
+    + '<div class="sec-desc">12 条精选教程，每条都有验收点</div></div>'
+    + '<button class="btn-ghost" data-action="open-file" data-file="05-教程导航/00-总览.md">总览</button></div>';
+  html += tus.length ? tus.map(function(t){
+    var on = state.fav.tutorials.indexOf(t.id)>=0;
+    return '<div class="list-card" data-action="open-item" data-kind="tu" data-id="'+esc(t.id)+'">'
+      + '<div class="lc-icon gray">'+esc(t.name.slice(0,1))+'</div>'
+      + '<div class="lc-body"><div class="lc-title">'+esc(t.name)+'<span class="tag tag-blue">'+esc(t.cat)+'</span></div>'
+      + '<div class="lc-desc">'+esc(t.sections||"")+' · 约 '+t.minutes+' 分钟 · '+esc(t.outcome||"")+'</div></div>'
+      + '<div class="lc-right"><button class="fav-btn'+(on?" on":"")+'" data-action="fav" data-kind="tutorials" data-id="'+esc(t.id)+'">'+ICONS.star+'</button></div>'
+      + '<div class="lc-arrow">'+ICONS.arrow+'</div></div>';
+  }).join('') : '<div class="empty" style="padding:22px"><div class="e-t">没有匹配的教程</div></div>';
+  return html;
+}
+function renderTools(){
+  var pCats = ["全部"]; allPlatforms().forEach(function(p){ if(pCats.indexOf(p.cat)<0) pCats.push(p.cat); });
+  return '<div class="sec-head"><div><div class="sec-title">工具</div>'
+    + '<div class="sec-desc">平台库与教程导航，选对工具再动手</div></div></div>'
+    + '<div class="chips">' + pCats.map(function(c){
+        return '<div class="chip'+(state.toolCat===c?" active":"")+'" data-action="tool-cat" data-cat="'+esc(c)+'">'+esc(c)+'</div>';
+      }).join('') + '</div>'
+    + '<input class="search" id="toolsSearch" placeholder="搜索平台 / 教程 / 场景…" value="'+esc(state.toolsQ||"")+'">'
+    + '<div id="toolsList">'+toolsListHtml(state.toolsQ||"")+'</div>';
+}
+
+/* ---------- 我的 ---------- */
+function renderMine(){
+  var st = stats();
+  var html = '<div class="sec-head"><div><div class="sec-title">我的</div>'
+    + '<div class="sec-desc">学习统计与数据管理，重要数据记得定期备份</div></div></div>'
+    + '<div class="stat-row">'
+    + statCard((C.daily||[]).length,CL+"篇数","bar-blue")
+    + statCard(st.favCount,"收藏数","bar-yellow")
+    + statCard(st.doneModules,"完成模块","bar-green")
+    + statCard(st.hours,"累计学时","bar-purple")
+    + '</div>';
+
+  var mineQl = (tm("quickLinks", []) || []).concat(tm("mineQuickLinks", []) || []);
+  if (mineQl.length){
+    html += '<div class="sec-head"><div><div class="sec-title">快捷入口</div>'
+      + '<div class="sec-desc">常用资料与记录入口</div></div></div>' + quickLinksHtml(mineQl);
+  }
+
+  html += '<div class="sec-head"><div><div class="sec-title">内容管理</div>'
+    + '<div class="sec-desc">新增的平台 / 教程只存本机；正式更新请改 content.js</div></div>'
+    + '<button class="btn-solid btn-sm" data-action="manage-open">打开管理</button></div>'
+    + '<div class="card pad">'
+    + rowItem("自定义平台",state.custom.platforms.length+" 个（本机）",'<button class="btn-ghost btn-sm" data-action="manage-open" data-tab="pf">管理</button>')
+    + rowItem("自定义教程",state.custom.tutorials.length+" 个（本机）",'<button class="btn-ghost btn-sm" data-action="manage-open" data-tab="tu">管理</button>')
+    + '</div>';
+
+  if (APP_MODE){
+    html += '<div class="sec-head"><div><div class="sec-title">资料库目录</div>'
+      + '<div class="sec-desc">应用模式：资料来自随网页部署的内容镜像</div></div></div>'
+      + '<div class="card pad">'
+      + rowItem("当前镜像路径","content/","<span class=\"tag tag-blue\">随网页部署</span>")
+      + '</div>'
+      + '<div class="alert alert-info">应用模式下「打开本地文件」按钮已替换为「阅读全文」；'
+      + '资料更新 = 改电脑母本 → 重新部署 → 手机刷新。</div>';
+  } else {
+    html += '<div class="sec-head"><div><div class="sec-title">资料库目录</div>'
+      + '<div class="sec-desc">搬家后改这里，全部「打开本地文件」链接跟随生效</div></div></div>'
+      + '<div class="card pad">'
+      + rowItem("当前根目录",esc(rootBase()),'<button class="btn-ghost btn-sm" data-action="set-root">修改</button>')
+      + '</div>';
+  }
+
+  html += '<div class="sec-head"><div><div class="sec-title">数据备份</div></div></div>' + backupHtml();
+
+  html += '<div class="sec-head"><div><div class="sec-title">AI 学习教练</div>'
+    + '<div class="sec-desc">DeepSeek 开箱即用（默认），也可改填本地 Ollama；Key 只存本机浏览器，不写入备份</div></div>'
+    + '<button class="btn-solid btn-sm" data-action="ai-open">打开对话</button></div>'
+    + '<div class="card pad">'
+    + '<div class="row-item"><div style="flex:1"><div class="row-title">Base URL</div>'
+    + '<input id="aiBase" class="ai-input" value="'+esc(state.ai.base)+'" placeholder="https://api.deepseek.com/v1"></div></div>'
+    + '<div class="row-item"><div style="flex:1"><div class="row-title">API Key</div>'
+    + '<input id="aiKey" class="ai-input" type="password" value="'+esc(state.ai.key)+'" placeholder="sk-…（在 DeepSeek 开放平台创建）"></div></div>'
+    + '<div class="row-item"><div style="flex:1"><div class="row-title">模型名</div>'
+    + '<input id="aiModel" class="ai-input" value="'+esc(state.ai.model)+'"></div></div>'
+    + '<div class="row-item"><div style="flex:1"><div class="row-title">温度（0-1，越低越稳）</div>'
+    + '<input id="aiTemp" class="ai-input" value="'+esc(state.ai.temp)+'"></div></div>'
+    + '<div class="row-item"><div style="flex:1"><div class="row-title">系统提示词（约束 AI 怎么答）</div>'
+    + '<textarea id="aiPrompt" class="ai-input" rows="7">'+esc(state.sysPrompt)+'</textarea>'
+    + '<div class="row-desc">占位符 {module} 与 {context} 会自动替换为当前模块与资料内容</div></div></div>'
+    + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">'
+    + '<button class="btn-solid btn-sm" data-action="ai-save">保存配置</button>'
+    + '<button class="btn-ghost btn-sm" data-action="ai-reset-prompt">恢复默认提示词</button></div>'
+    + '</div>'
+    + '<div class="row-desc" style="margin:8px 2px 0">⚠️ Key 保存在本机浏览器 localStorage，<b>不会</b>写入导出的备份文件；换设备需重新填写。'
+    + '本地 Ollama 用户：Base URL 填 http://电脑IP:11434/v1，模型填本地模型名，并确保启动时设置了 OLLAMA_ORIGINS=*。</div>';
+
+  html += '<div class="sec-head"><div><div class="sec-title">关于</div></div></div>'
+    + '<div class="card pad">'
+    + rowItem("版本","AI 学习工作台 v1.0（任务学习版 · 依据报告 v2）",'')
+    + rowItem("规格来源","工作台可执行报告 v2（Doubao 已复核）",'<button class="btn-ghost btn-sm" data-action="open-file" data-file="工作台可执行报告.md">打开</button>')
+    + rowItem("同步模式","本机模式，数据存于浏览器 localStorage",'<span class="tag tag-gray">离线自包含</span>')
+    + '</div>';
+  return html;
+}
+
+/* ---------- 抽屉内容 ---------- */
+function dailyDrawerHtml(d){
+  var m = moduleByCode(d.moduleCode) || {};
+  var head = '<div class="dh-title">'+esc(d.title)+'</div>'
+    + '<div class="dh-tags"><span class="tag tag-blue">'+esc(d.date)+'</span>'
+    + '<span class="tag tag-gray">'+d.minutes+' 分钟</span>'
+    + '<span class="tag tag-orange">模块 '+esc(d.moduleCode)+' '+esc(m.name||"")+'</span></div>';
+  var html = '<div style="margin-top:2px">';
+  (d.content||[]).forEach(function(s){ html += '<div class="d-h">'+esc(s.h)+'</div><div class="d-p">'+esc(s.p)+'</div>'; });
+  html += '</div>';
+  if ((d.quiz||[]).length) {
+    html += '<div class="d-h">测一测（先自己答，再看答案）</div>';
+    d.quiz.forEach(function(q,i){
+      html += '<div class="quiz-item" data-action="quiz" role="button">'
+        + '<div class="quiz-q"><span>'+(i+1)+'. '+esc(q.q)+'</span><span style="color:var(--text-3)">看答案</span></div>'
+        + '<div class="quiz-a">'+esc(q.a)+'</div></div>';
+    });
+  }
+  if (d.source) html += '<div class="d-h">出处</div><div class="d-p">'+esc(d.source)+'</div>';
+  return { head: head, body: html };
+}
+function moduleDrawerHtml(m){
+  var head = '<div class="dh-title">'+esc(m.code)+' '+esc(m.name)+'</div>'
+    + '<div class="dh-tags"><span class="tag tag-blue">熟练度 '+esc(m.level||"L1")+'</span>'
+    + '<span class="tag tag-gray">目标：'+esc(m.goal)+'</span></div>';
+  var html = '';
+  SEG_DEFS.forEach(function(s){
+    var map = { learn:"learn", practice:"practice", record:"record", test:"accept" };
+    var txt = m[map[s.key]];
+    if (txt) html += '<div class="d-h">'+esc(s.name)+' '+s.minutes+"'</div><div class="+'"d-p"'+'>'+esc(txt)+'</div>';
+  });
+  return { head: head, body: html };
+}
+function itemDrawerHtml(kind,x){
+  if (kind==="pf") {
+    var head = '<div class="dh-title">'+esc(x.name)+'</div>'
+      + '<div class="dh-tags"><span class="tag tag-blue">'+esc(x.cat)+'</span>'
+      + '<span class="tag tag-gray">核实日期 '+esc(x.verifiedAt||"未标注")+'</span></div>';
+    var html = '<div class="d-h">一句话介绍</div><div class="d-p">'+esc(x.desc)+'</div>'
+      + '<div class="d-h">适用场景</div><div class="d-p">'+esc(x.scene||"")+'</div>'
+      + ((x.tips||[]).length?'<div class="d-h">实操技巧</div>'+x.tips.map(function(t){ return '<div class="tips-li">'+esc(t)+'</div>'; }).join(''):'')
+      + (x.link?'<div class="d-h">官网</div><div class="d-p"><a href="'+esc(x.link)+'" target="_blank" rel="noopener">'+esc(x.link)+'</a></div>':'');
+    return { head: head, body: html };
+  }
+  // mn / pt / gl / tu
+  var isTu = kind==="tu";
+  var head = '<div class="dh-title">'+esc(x.name)+'</div><div class="dh-tags">';
+  if (isTu) head += '<span class="tag tag-blue">'+esc(x.cat)+'</span><span class="tag tag-gray">约 '+x.minutes+' 分钟</span>';
+  else head += '<span class="tag tag-gray">'+esc(x.cat||"")+'</span><span class="tag tag-green">'+esc(x.reuse||"")+'</span>';
+  head += '</div>';
+  var body = '<div class="d-h">说明</div><div class="d-p">'+esc(isTu?(x.outcome||""):x.desc)+'</div>';
+  if (isTu && x.sections) body += '<div class="d-h">看哪几节</div><div class="d-p">'+esc(x.sections)+'</div>';
+  if (isTu && x.moduleCode) { var mm = moduleByCode(x.moduleCode); if (mm) body += '<div class="d-h">对应模块</div><div class="d-p">'+esc(mm.code)+' '+esc(mm.name)+'</div>'; }
+  if (x.file) body += '<div class="d-h">本地文件</div><div class="d-p" style="word-break:break-all;color:var(--text-3);font-size:12px">'+esc(wbPath(x.file))+'</div>';
+  return { head: head, body: body };
+}
+
+/* ---------- 内置 Markdown 渲染器（应用模式阅读用，约 100 行，零依赖） ---------- */
+function mdInline(s){
+  return esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+function mdRow(l){ return l.replace(/^\s*\|/,"").replace(/\|\s*$/,"").split("|").map(function(s){ return s.trim(); }); }
+function mdToHtml(src){
+  var lines = String(src || "").split(/\r?\n/), out = [], inCode = false, buf = [], inList = false;
+  function endList(){ if (inList){ out.push("</ul>"); inList = false; } }
+  for (var i = 0; i < lines.length; i++){
+    var ln = lines[i];
+    if (/^\s*```/.test(ln)){
+      if (inCode){ out.push("<pre><code>" + esc(buf.join("\n")) + "</code></pre>"); buf = []; }
+      inCode = !inCode; continue;
+    }
+    if (inCode){ buf.push(ln); continue; }
+    if (/^\s*$/.test(ln)){ endList(); continue; }
+    var h = ln.match(/^(#{1,6})\s+(.*)$/);
+    if (h){ endList(); var lv = h[1].length; out.push("<h" + lv + ">" + mdInline(h[2]) + "</h" + lv + ">"); continue; }
+    if (/^\s*[-*+]\s+/.test(ln) || /^\s*\d+[.)]\s+/.test(ln)){
+      if (!inList){ out.push("<ul>"); inList = true; }
+      out.push("<li>" + mdInline(ln.replace(/^\s*[-*+]\s+/, "").replace(/^\s*\d+[.)]\s+/, "")) + "</li>"); continue;
+    }
+    if (/^\s*>\s?/.test(ln)){ endList(); out.push("<blockquote>" + mdInline(ln.replace(/^\s*>\s?/, "")) + "</blockquote>"); continue; }
+    if (/^\s*\|.*\|\s*$/.test(ln) && i + 1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1])){
+      endList();
+      var head = mdRow(ln), rows = [];
+      i += 2;
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])){ rows.push(mdRow(lines[i])); i++; }
+      i--;
+      var t = "<table><thead><tr>" + head.map(function(c){ return "<th>" + mdInline(c) + "</th>"; }).join("") + "</tr></thead><tbody>";
+      rows.forEach(function(r){ t += "<tr>" + r.map(function(c){ return "<td>" + mdInline(c) + "</td>"; }).join("") + "</tr>"; });
+      out.push(t + "</tbody></table>"); continue;
+    }
+    endList();
+    out.push("<p>" + mdInline(ln) + "</p>");
+  }
+  endList();
+  return out.join("");
+}
+
+/* ---------- 应用模式：文件阅读器 ---------- */
+var READER_CACHE = {};
+function openReader(rel){
+  var url = wbPath(rel), name = rel.split("/").pop(), relEsc = esc(rel);
+  openDrawer({
+    head: '<div class="dh-title">' + esc(name) + '</div>'
+        + '<div class="dh-tags"><span class="tag tag-blue">应用内阅读</span>'
+        + '<span class="tag tag-gray">' + relEsc + '</span></div>',
+    body: '<div class="md-body" id="mdBody"><div class="empty"><div class="e-t">正在读取…</div></div></div>'
+  }, rel, true);
+  var box = document.getElementById("mdBody");
+  if (!box) return;
+  if (READER_CACHE[rel]){
+    box.innerHTML = mdToHtml(READER_CACHE[rel]); return;
+  }
+  fetch(url).then(function(r){ if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+    .then(function(t){
+      READER_CACHE[rel] = t;
+      box.innerHTML = mdToHtml(t);
+    })
+    .catch(function(e){
+      box.innerHTML = '<div class="empty"><div class="e-t">读取失败：' + esc(e.message) + '</div>'
+        + '<div class="e-d">路径：' + esc(url) + '</div>'
+        + '<div class="e-d">若此文件未随网页部署，请到「我的」查看或改用电脑本机打开</div></div>';
+    });
+}
+
+/* ---------- AI 学习教练（OpenAI 兼容：DeepSeek 默认，可切 Ollama 等） ---------- */
+function aiContext(){
+  var m = currentModule(), parts = [];
+  if (m){
+    parts.push("模块 " + m.code + " " + m.name);
+    if (m.goal)   parts.push("目标产出：" + m.goal);
+    if (m.learn)  parts.push("学：" + m.learn);
+    if (m.accept) parts.push("验收：" + m.accept);
+  }
+  // 应用模式下把当前阅读文件的前 2000 字作为上下文（本机模式读不到文件，跳过）
+  if (CURRENT_DRAWER_FILE && READER_CACHE[CURRENT_DRAWER_FILE]){
+    parts.push("\n当前阅读文件：" + CURRENT_DRAWER_FILE + "\n" + READER_CACHE[CURRENT_DRAWER_FILE].slice(0, 2000));
+  }
+  return parts.join("\n") || "（暂无上下文）";
+}
+function aiSysRendered(){
+  var m = currentModule();
+  return state.sysPrompt
+    .replace("{module}", m ? (m.code + " " + m.name) : "未开始")
+    .replace("{context}", aiContext());
+}
+function aiSend(text){
+  text = String(text || "").trim();
+  if (!text) return;
+  state.chat.push({ role:"user", content:text });
+  renderAiDrawer();
+  var cfg = state.ai;
+  if (!cfg.key){
+    state.chat.push({ role:"assistant", content:"⚠️ 还没填 API Key。到「我的 → AI 学习教练」填入你的 DeepSeek Key（Key 只存本机浏览器，不会上传，也不会写进备份文件）。" });
+    renderAiDrawer(); return;
+  }
+  var msgs = [{ role:"system", content:aiSysRendered() }].concat(state.chat);
+  var url = String(cfg.base || "").replace(/\/+$/, "") + "/chat/completions";
+  fetch(url, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json", "Authorization":"Bearer " + cfg.key },
+    body: JSON.stringify({ model: cfg.model || "deepseek-chat", temperature: Number(cfg.temp) || 0.7, messages: msgs })
+  }).then(function(r){
+    return r.text().then(function(t){
+      if (!r.ok){
+        var msg = "请求失败（HTTP " + r.status + "）";
+        try { var j = JSON.parse(t); if (j && j.error && j.error.message) msg += "：" + j.error.message; } catch(e){}
+        if (r.status === 401) msg += "。请检查 API Key 是否正确。";
+        if (r.status === 404) msg += "。请检查 Base URL 与模型名是否匹配。";
+        throw new Error(msg);
+      }
+      var d = JSON.parse(t);
+      return (d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || "（模型未返回内容）";
+    });
+  }).then(function(reply){
+    state.chat.push({ role:"assistant", content:reply });
+    renderAiDrawer();
+  }).catch(function(err){
+    var tip = String(err.message || "").indexOf("Failed to fetch") >= 0
+      ? "网络请求失败：可能是跨域限制或网络不通。云端 API 一般可直连；本地 Ollama 需启动时设置 OLLAMA_ORIGINS=*。"
+      : err.message;
+    state.chat.push({ role:"assistant", content:"⚠️ " + tip });
+    renderAiDrawer();
+  });
+}
+function renderAiDrawer(){
+  var cfg = state.ai, body = "";
+  if (!cfg.key){
+    body += '<div class="alert alert-warn">未配置 API Key，当前不可对话。到「我的 → AI 学习教练」填入 DeepSeek Key 即可。</div>';
+  }
+  body += '<div id="chatList">' + (state.chat.length ? state.chat.map(function(m){
+    return '<div class="chat-msg ' + (m.role === "user" ? "me" : "ai") + '"><div class="chat-bubble">'
+      + esc(m.content).replace(/\n/g, "<br>") + '</div></div>';
+  }).join("") : '<div class="empty" style="padding:26px"><div class="e-t">问点什么吧</div>'
+    + '<div class="e-d">例：用大白话解释什么是 Token？/ 这个模块的验收我怎么自查？</div></div>') + '</div>';
+  var d = document.getElementById("drawer");
+  d.innerHTML = '<div class="drawer-head"><div><div class="dh-title">AI 学习教练</div>'
+    + '<div class="dh-tags"><span class="tag tag-blue">' + esc(cfg.model || "") + '</span>'
+    + '<span class="tag tag-gray">模块 ' + esc(currentModule() ? currentModule().code : "未开始") + '</span></div></div>'
+    + '<button class="d-close" data-action="drawer-close">' + ICONS.x + '</button></div>'
+    + '<div class="drawer-body">' + body + '</div>'
+    + '<div class="drawer-foot chat-foot">'
+    + '<input id="chatInput" placeholder="输入你的问题…" autocomplete="off">'
+    + '<button class="btn-solid" data-action="ai-send">发送</button></div>';
+  document.getElementById("drawerMask").classList.add("show");
+  d.classList.add("show");
+  var list = document.getElementById("chatList");
+  if (list) list.scrollTop = list.scrollHeight;
+}
+function openAi(){
+  state.chat = state.chat || [];
+  renderAiDrawer();
+  setTimeout(function(){ var i = document.getElementById("chatInput"); if (i) i.focus(); }, 120);
+}
+
+/* ---------- 交互 ---------- */
+var CURRENT_DRAWER_FILE = null;
+function openDrawer(content, filePath, hideRead){
+  // content = { head, body }；head 是标题区，body 是正文（避免重复渲染）
+  // hideRead=true 表示当前就是阅读器，不再重复显示「阅读全文」，改为提供「问 AI」
+  CURRENT_DRAWER_FILE = filePath || null;
+  var d = document.getElementById("drawer");
+  var canRead = filePath && /\.md$/i.test(filePath) && !hideRead;
+  // 应用模式下 file:// 按钮无效，只保留「复制路径」，杜绝「点了没反应」
+  var fileBtns = filePath
+    ? (APP_MODE
+        ? (canRead ? '<button class="btn-solid" style="flex:1" data-action="drawer-read">阅读全文</button>' : '')
+          + (hideRead ? '<button class="btn-ghost" data-action="ai-open">问 AI</button>' : '')
+          + '<button class="btn-ghost" data-action="copy-path">复制路径</button>'
+        : '<button class="btn-solid" style="flex:1" data-action="drawer-open-file">打开本地文件</button>'
+          + '<button class="btn-ghost" data-action="copy-path">复制路径</button>')
+    : '';
+  d.innerHTML = '<div class="drawer-head"><div>'+content.head+'</div>'
+    + '<button class="d-close" data-action="drawer-close">'+ICONS.x+'</button></div>'
+    + '<div class="drawer-body">'+content.body+'</div>'
+    + '<div class="drawer-foot">'+fileBtns
+    + '<button class="btn-ghost" style="flex:1" data-action="drawer-close">关闭</button></div>';
+  document.getElementById("drawerMask").classList.add("show");
+  d.classList.add("show");
+}
+function closeDrawer(){
+  document.getElementById("drawerMask").classList.remove("show");
+  document.getElementById("drawer").classList.remove("show");
+  CURRENT_DRAWER_FILE = null;
+}
+var modalCb = null;
+function confirmBox(title, desc, btnText, cb){
+  modalCb = cb;
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalDesc").textContent = desc;
+  document.getElementById("modalBtns").innerHTML =
+    '<button class="btn-ghost" data-action="modal-cancel">取消</button>'
+    + '<button class="btn-danger" data-action="modal-ok">'+esc(btnText)+'</button>';
+  document.getElementById("modalMask").classList.add("show");
+}
+function closeModal(){ document.getElementById("modalMask").classList.remove("show"); modalCb = null; }
+var toastTimer = null;
+function toast(msg){
+  var t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2200);
+}
+function markRead(id){
+  if (state.read.indexOf(id)<0){ state.read.push(id); lsSet(LS.read, state.read); }
+}
+
+/* ---------- 路由（唯一调度入口） ---------- */
+var RENDER = { home:renderHome, learn:renderLearn, manual:renderManual, tools:renderTools, mine:renderMine };
+function route(){
+  var h = (location.hash||"#/home").replace("#/","");
+  if (h.indexOf("platdetail/")===0) { state.route="tools"; }
+  else if (NAVS.some(function(n){ return n.key===h; })) state.route = h;
+  else state.route = "home";
+  renderNav();
+  var v = document.getElementById("view");
+  v.classList.remove("view"); void v.offsetWidth; v.classList.add("view");
+  v.innerHTML = RENDER[state.route]();
+  window.scrollTo(0,0);
+}
+function refreshAll(){ route(); }
+
+/* ---------- 事件委托 ---------- */
+document.addEventListener("click", function(e){
+  var el = e.target.closest("[data-action]");
+  if (!el) return;
+  var a = el.getAttribute("data-action");
+
+  if (a==="nav"){ location.hash = "#/" + el.getAttribute("data-route"); return; }
+  if (a==="goto"){ location.hash = "#/" + el.getAttribute("data-route"); return; }
+
+  if (a==="seg-toggle"){
+    var key = el.getAttribute("data-seg");
+    var t = todayStr();
+    var seg = state.seg[t] || {};
+    seg[key] = !seg[key];
+    state.seg[t] = seg; lsSet(LS.seg, state.seg);
+    var st = stats();
+    if (st.segCount===4 && !st.checkedIn){
+      state.checkin.push(t); lsSet(LS.checkin, state.checkin);
+      var m = currentModule();
+      if (m){ state.progress[m.id]="done"; lsSet(LS.progress, state.progress);
+        var nxt = (C.modules||[]).filter(function(x){ return !state.progress[x.id]||state.progress[x.id]==="todo"; })[0];
+        if (nxt){ state.progress[nxt.id]="doing"; lsSet(LS.progress, state.progress); }
+      }
+      // 阶段天数持久化：打卡一次推进一天，重开页面不再回退
+      state.stageDay = (state.stageDay||1) + 1;
+      lsSet(LS.stageDay, state.stageDay);
+      toast("今日打卡成功 · 「"+(m?m.name:"")+"」已完成");
+    }
+    refreshAll(); return;
+  }
+
+  if (a==="manual-cat"){ state.manualCat = el.getAttribute("data-cat"); refreshAll(); return; }
+  if (a==="tool-cat"){ state.toolCat = el.getAttribute("data-cat"); refreshAll(); return; }
+  if (a==="stage"){ state.learnStage = parseInt(el.getAttribute("data-stage"),10); lsSet(LS.stage, state.learnStage); refreshAll(); return; }
+
+  if (a==="fav"){
+    e.stopPropagation();
+    var kind = el.getAttribute("data-kind"), id = el.getAttribute("data-id");
+    var arr = state.fav[kind], i = arr.indexOf(id);
+    if (i>=0) arr.splice(i,1); else arr.push(id);
+    lsSet(LS.fav, state.fav);
+    el.classList.toggle("on"); toast(i>=0?"已取消收藏":"已收藏"); return;
+  }
+
+  if (a==="quiz"){ el.closest(".quiz-item").classList.toggle("open"); return; }
+
+  if (a==="open-daily"){
+    var d = (C.daily||[]).filter(function(x){ return x.id===el.getAttribute("data-id"); })[0];
+    if (d){ openDrawer(dailyDrawerHtml(d)); markRead(d.id); }
+    return;
+  }
+  if (a==="open-module"){
+    var m = (C.modules||[]).filter(function(x){ return x.id===el.getAttribute("data-id"); })[0];
+    if (m) openDrawer(moduleDrawerHtml(m));
+    return;
+  }
+  if (a==="open-module-file"){
+    e.stopPropagation();
+    var m2 = (C.modules||[]).filter(function(x){ return x.id===el.getAttribute("data-id"); })[0];
+    if (m2 && m2.paths){
+      var f = m2.paths.manual || m2.paths.tutorial || m2.paths.prompt || m2.paths.plan;
+      if (!f) return;
+      // 应用模式读镜像，本机模式直跳
+      if (APP_MODE && /\.md$/i.test(f)) openReader(f);
+      else if (!APP_MODE) window.open(wbPath(f), "_blank");
+      else toast("该文件需在电脑本机打开");
+    }
+    return;
+  }
+  if (a==="open-item"){
+    var kind = el.getAttribute("data-kind"), id2 = el.getAttribute("data-id");
+    var pool = kind==="pf"?allPlatforms():(kind==="tu"?allTutorials():null);
+    var x = null;
+    if (pool) x = pool.filter(function(y){ return y.id===id2; })[0];
+    else {
+      var src = kind==="mn"?C.manuals:(kind==="pt"?C.prompts:C.glossary);
+      x = (src||[]).filter(function(y){ return y.id===id2; })[0];
+    }
+    if (x) openDrawer(itemDrawerHtml(kind,x), x.file||null);
+    return;
+  }
+
+  if (a==="open-file" || a==="drawer-open-file" || a==="drawer-read"){
+    var f2 = (a==="open-file") ? el.getAttribute("data-file") : CURRENT_DRAWER_FILE;
+    if (!f2) return;
+    if (APP_MODE){
+      // 应用模式：file:// 无效，改为读取随网页部署的镜像；目录类无法阅读
+      if (/\.md$/i.test(f2)) openReader(f2);
+      else if (/\.pdf$/i.test(f2)) window.open(wbPath(f2), "_blank");
+      else toast("这是资料库目录，仅电脑本机可打开（应用模式可直接阅读 .md 与 PDF）");
+      return;
+    }
+    if (a==="drawer-read"){ openReader(f2); return; }
+    window.open(wbPath(f2), "_blank");
+    toast("已在新窗口打开；若提示找不到文件，到 我的 → 资料库目录 修改根目录");
+    return;
+  }
+  if (a==="copy-path"){
+    if (CURRENT_DRAWER_FILE) copyText(wbPath(CURRENT_DRAWER_FILE), "完整路径已复制");
+    return;
+  }
+
+  /* --- AI 学习教练 --- */
+  if (a==="ai-open"){ openAi(); return; }
+  if (a==="ai-send"){
+    var inp = document.getElementById("chatInput");
+    var txt = inp ? inp.value : "";
+    if (inp) inp.value = "";
+    aiSend(txt);
+    return;
+  }
+  if (a==="ai-save"){
+    var g = function(id){ var x = document.getElementById(id); return x ? x.value.trim() : ""; };
+    var base = g("aiBase");
+    if (base && !/^https?:\/\//i.test(base)){ toast("Base URL 需以 http:// 或 https:// 开头"); return; }
+    state.ai = { base: base || DEFAULT_AI.base, key: g("aiKey"), model: g("aiModel") || DEFAULT_AI.model, temp: Number(g("aiTemp")) || 0.7 };
+    lsSet(LS.ai, state.ai);
+    var p = document.getElementById("aiPrompt");
+    if (p && p.value.trim()){ state.sysPrompt = p.value; lsSet(LS.sysPrompt, state.sysPrompt); }
+    toast("配置已保存到本机");
+    return;
+  }
+  if (a==="ai-reset-prompt"){
+    state.sysPrompt = DEFAULT_SYS_PROMPT; lsSet(LS.sysPrompt, state.sysPrompt);
+    var pe = document.getElementById("aiPrompt");
+    if (pe) pe.value = DEFAULT_SYS_PROMPT;
+    toast("已恢复默认系统提示词");
+    return;
+  }
+  if (a==="copy-daily-template"){
+    var tpl = "## "+todayStr()+"\n### 今天学了什么（能力/方法）\n-\n\n### 今天做了什么产出（图/视频/工具/内容）\n-\n\n### 今天遇到什么问题\n-\n\n### 明天计划做什么\n-\n\n### 本周数据（如有更新）\n- 产出数据：___ / 反馈：___";
+    copyText(tpl, "日记录模板已复制，粘贴到 12-每日记录/2026-09/ 下的新文件"); return;
+  }
+  if (a==="copy-topic-prompt"){
+    var done = (C.modules||[]).filter(function(x){ return state.progress[x.id]==="done"; }).map(function(x){ return x.code; }).join(" / ")||"无";
+    var pr = "背景：我在推进「AI 学习资料库」阶段一，今天是 "+todayStr()+"。\n\n目标：从模块池里选出接下来 7 天各自的专栏主题，表格输出：日期 | 模块编号 | 主题 | 为什么现在学它。\n\n模块池：1.0 术语急救包 / 1.1 判得对 / 1.2 指挥得动 / 1.3 文生图 / 1.4 文生视频 / 1.5 辅助剪辑 / 1.6 Vibe Coding / 1.7 Github 基础 / 1.8 沉淀 AI 协作手册\n\n约束：已完成的从池里排除（已完成："+done+"）；1.0-1.2 先于 1.3-1.6；每天 1 篇日期连续不重复；表格 7 行。\n请按以上输出。";
+    copyText(pr, "选题提示词已复制，去 AI 生成后写入 content.js"); return;
+  }
+
+  if (a==="export-data"){
+    var data = { app:"ai-study-workbench", exportedAt:new Date().toISOString(),
+      progress:state.progress, read:state.read, fav:state.fav, checkin:state.checkin,
+      seg:state.seg, custom:state.custom, root:rootBase() };
+    var blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "wb-backup-"+todayStr().replace(/-/g,"")+".json";
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    toast("快照已导出"); return;
+  }
+  if (a==="clear-data"){
+    confirmBox("清空本机数据","将删除全部进度、打卡、收藏与本机自定义内容（发布内容与当前配置保留）。此操作不可撤销。","确认清空",function(){
+      [LS.progress,LS.read,LS.fav,LS.checkin,LS.seg,LS.custom].forEach(function(k){ localStorage.removeItem(k); });
+      location.reload();
+    });
+    return;
+  }
+  if (a==="set-root"){
+    var nv = prompt("输入资料库根目录（末尾带 /），例如 D:/MyLibrary/", rootBase() || "");
+    if (nv===null) return;
+    nv = nv.replace(/\\/g,"/").replace(/\s/g,"");
+    if (nv && nv.slice(-1)!=="/") nv += "/";
+    localStorage.setItem(LS.root, JSON.stringify(nv).slice(1,-1));
+    toast("根目录已更新"); refreshAll(); return;
+  }
+  if (a==="manage-open"){ openManageDrawer(el.getAttribute("data-tab")||"pf"); return; }
+  if (a==="modal-cancel"){ closeModal(); return; }
+  if (a==="modal-ok"){ var cb=modalCb; closeModal(); if(cb) cb(); return; }
+  if (a==="drawer-close"){ closeDrawer(); return; }
+});
+
+/* 搜索（input 事件委托：只重绘列表容器，输入框不丢焦点） */
+document.addEventListener("input", function(e){
+  var id = e.target.id || "";
+  if (id==="manualSearch"){ var a=document.getElementById("manualList"); if(a) a.innerHTML = manualListHtml(e.target.value); }
+  else if (id==="toolsSearch"){ var b=document.getElementById("toolsList"); if(b) b.innerHTML = toolsListHtml(e.target.value); }
+  else if (id==="learnSearch"){ var c=document.getElementById("learnList"); if(c) c.innerHTML = learnBodyHtml(e.target.value); }
+});
+
+/* 导入文件（change 事件单独委托） */
+document.addEventListener("change", function(e){
+  var el = e.target;
+  if (el.getAttribute && el.getAttribute("data-action")==="import-file"){
+    var fr = new FileReader();
+    fr.onload = function(){
+      try {
+        var d = JSON.parse(fr.result);
+        if (!d || (!d.progress && !d.checkin)) throw new Error("不是有效的工作台快照");
+        if (d.progress) { state.progress=d.progress; lsSet(LS.progress,d.progress); }
+        if (d.read) { state.read=d.read; lsSet(LS.read,d.read); }
+        if (d.fav) { state.fav=d.fav; lsSet(LS.fav,d.fav); }
+        if (d.checkin) { state.checkin=d.checkin; lsSet(LS.checkin,d.checkin); }
+        if (d.seg) { state.seg=d.seg; lsSet(LS.seg,d.seg); }
+        if (d.custom) { state.custom=d.custom; lsSet(LS.custom,d.custom); }
+        if (d.root) localStorage.setItem(LS.root, String(d.root));
+        toast("导入成功"); refreshAll();
+      } catch(err){ toast("导入失败："+err.message); }
+    };
+    fr.readAsText(el.files[0]);
+    el.value = "";
+  }
+});
+document.addEventListener("keydown", function(e){
+  if (e.key === "Escape"){ closeDrawer(); return; }
+  // 聊天输入框回车发送（Shift+Enter 不触发，留给将来换行）
+  if (e.key === "Enter" && e.target && e.target.id === "chatInput"){
+    var v = e.target.value; e.target.value = ""; aiSend(v);
+  }
+});
+
+function copyText(txt, msg){
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(function(){ toast(msg); }, function(){ fallbackCopy(txt,msg); });
+  } else fallbackCopy(txt,msg);
+}
+function fallbackCopy(txt,msg){
+  var ta = document.createElement("textarea");
+  ta.value = txt; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); toast(msg); }catch(e){ toast("复制失败，请手动复制"); }
+  document.body.removeChild(ta);
+}
+
+/* 内容管理抽屉（本机自定义平台/教程，支持增/删/改） */
+var MANAGE_TAB = "pf";
+var MANAGE_EDIT = -1; // -1 = 新增模式；>=0 = 编辑对应下标
+function openManageDrawer(tab, editIdx){
+  MANAGE_TAB = tab || MANAGE_TAB;
+  MANAGE_EDIT = (typeof editIdx==="number") ? editIdx : -1;
+  var list = MANAGE_TAB==="pf" ? state.custom.platforms : state.custom.tutorials;
+  var editing = MANAGE_EDIT>=0 ? list[MANAGE_EDIT] : null;
+  var v = function(val){ return esc(val==null?"":val); };
+  var html = '<div class="d-h" style="margin-top:0">'+(editing?("编辑："+esc(editing.name)):"新增"+(MANAGE_TAB==="pf"?"平台":"教程链接"))+'（仅本机生效）</div>'
+    + '<input id="mf-name" placeholder="名称" value="'+v(editing&&editing.name)+'" style="width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin-bottom:8px">'
+    + '<input id="mf-cat" placeholder="分类（文生图/剪辑/编程…）" value="'+v(editing&&editing.cat)+'" style="width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin-bottom:8px">'
+    + (MANAGE_TAB==="pf" ? '<input id="mf-desc" placeholder="一句话介绍" value="'+v(editing&&editing.desc)+'" style="width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin-bottom:8px">' : '')
+    + '<input id="mf-link" placeholder="链接 https://…" value="'+v(editing&&editing.link)+'" style="width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin-bottom:10px">'
+    + '<button class="btn-solid btn-sm" data-action="custom-add">'+(editing?"保存修改":"添加")+'</button>'
+    + (editing?'<button class="btn-ghost btn-sm" data-action="custom-cancel-edit" style="margin-left:8px">取消</button>':'')
+    + '<div class="d-h">已添加 '+list.length+' 个</div>'
+    + (list.length ? list.map(function(x,i){
+        return '<div class="row-item"><div><div class="row-title">'+esc(x.name)+'</div><div class="row-desc">'+esc(x.cat||"")+'</div></div>'
+          + '<div style="display:flex;gap:8px;flex-shrink:0">'
+          + '<button class="btn-ghost btn-sm" data-action="custom-edit" data-idx="'+i+'">编辑</button>'
+          + '<button class="btn-danger btn-sm" data-action="custom-del" data-idx="'+i+'">删除</button></div></div>';
+      }).join('') : '<div class="d-p" style="color:var(--text-3)">还没有，正式内容请改 content.js</div>');
+  document.getElementById("drawerMask").classList.add("show");
+  var d = document.getElementById("drawer");
+  d.innerHTML = '<div class="drawer-head"><div><div class="dh-title">内容管理</div></div>'
+    + '<button class="d-close" data-action="drawer-close">'+ICONS.x+'</button></div>'
+    + '<div class="drawer-body">'+html+'</div>'
+    + '<div class="drawer-foot"><button class="btn-ghost" style="flex:1" data-action="drawer-close">完成</button></div>';
+  d.classList.add("show");
+}
+document.addEventListener("click", function(e){
+  var el = e.target.closest('[data-action="custom-add"],[data-action="custom-del"],[data-action="custom-edit"],[data-action="custom-cancel-edit"]');
+  if (!el) return;
+  var a = el.getAttribute("data-action");
+  if (a==="custom-add"){
+    var g = function(id){ var x=document.getElementById(id); return x?x.value.trim():""; };
+    var name = g("mf-name");
+    if (!name){ toast("名称必填"); return; }
+    if (MANAGE_EDIT>=0){
+      var it = (MANAGE_TAB==="pf"?state.custom.platforms:state.custom.tutorials)[MANAGE_EDIT];
+      if (it){
+        it.name = name; it.cat = g("mf-cat")||it.cat||"其他"; it.link = g("mf-link");
+        if (MANAGE_TAB==="pf") it.desc = g("mf-desc");
+      }
+      lsSet(LS.custom, state.custom);
+      toast("已保存修改"); openManageDrawer(MANAGE_TAB, -1);
+    } else {
+      if (MANAGE_TAB==="pf"){
+        state.custom.platforms.push({ id:"c"+Date.now(), cat:g("mf-cat")||"其他", name:name,
+          logo:name.slice(0,1), desc:g("mf-desc")||"", scene:"", tips:[], link:g("mf-link"), verifiedAt:todayStr(), _local:true });
+      } else {
+        state.custom.tutorials.push({ id:"c"+Date.now(), cat:g("mf-cat")||"其他", name:name,
+          sections:"", minutes:30, outcome:"", link:g("mf-link"), _local:true });
+      }
+      lsSet(LS.custom, state.custom);
+      toast("已添加（仅本机）"); openManageDrawer();
+    }
+    return;
+  }
+  if (a==="custom-edit"){
+    openManageDrawer(MANAGE_TAB, parseInt(el.getAttribute("data-idx"),10)); return;
+  }
+  if (a==="custom-cancel-edit"){
+    openManageDrawer(MANAGE_TAB, -1); return;
+  }
+  if (a==="custom-del"){
+    var i = parseInt(el.getAttribute("data-idx"),10);
+    if (MANAGE_TAB==="pf") state.custom.platforms.splice(i,1);
+    else state.custom.tutorials.splice(i,1);
+    lsSet(LS.custom, state.custom);
+    toast("已删除"); openManageDrawer(MANAGE_TAB, -1); return;
+  }
+});
+
+/* 启动 */
+(function(){
+  var app = tm("appName", "AI 学习工作台");
+  var bn = document.getElementById("brandName");
+  if (bn && app) bn.textContent = app;
+  var bs = document.getElementById("brandSub");
+  if (bs && tm("slogan")) bs.textContent = tm("slogan");
+  if (app) document.title = app;
+})();
+window.addEventListener("hashchange", route);
+route();
+})();
+</script>
+</body>
+</html>
