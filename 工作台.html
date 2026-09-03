@@ -640,7 +640,7 @@ function statCard(num,label,bar){
 function rowItem(title,desc,right){
   return '<div class="row-item"><div><div class="row-title">'+title+'</div><div class="row-desc">'+esc(desc)+'</div></div>'+right+'</div>';
 }
-/* 快捷入口（开源化：入口列表来自 theme，骨架不绑定个人目录） */
+/* 快捷入口：入口列表来自 theme，可随主题包自定义 */
 function quickLinksHtml(list){
   if (!list || !list.length) return '';
   return '<div class="card pad">' + list.map(function(q){
