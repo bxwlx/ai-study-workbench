@@ -310,7 +310,7 @@ textarea.ai-input{resize:vertical;line-height:1.6;font-size:13px}
       </div>
       <div>
         <div class="brand-name" id="brandName">AI 学习工作台</div>
-        <div class="brand-sub" id="brandSub">学 AI · 用 AI · 变现</div>
+        <div class="brand-sub" id="brandSub">学 AI · 用 AI</div>
       </div>
     </div>
     <div id="nav"></div>
@@ -457,7 +457,8 @@ var APP_MODE = location.protocol !== "file:";
 function rootBase(){
   if (APP_MODE) return "content/";   // 部署目录内的资料镜像
   var saved = localStorage.getItem(LS.root);
-  return saved ? saved.replace(/["\s]/g,"") : (window.WB_ROOT || "E:/腾讯/AI学习资料库/");
+  // 本机模式资料库根目录：优先用户设置；content.js 可提供 WB_ROOT；都没有则为空（file 类按钮自动隐藏）
+  return saved ? saved.replace(/["\s]/g,"") : (window.WB_ROOT || "");
 }
 function wbPath(rel){ return rel ? (rootBase() + rel) : ""; }
 function moduleByCode(code){ return (C.modules||[]).filter(function(m){ return m.code===code; })[0]; }
@@ -1311,7 +1312,7 @@ document.addEventListener("click", function(e){
     return;
   }
   if (a==="copy-daily-template"){
-    var tpl = "## "+todayStr()+"\n### 今天学了什么（工具/能力）\n-\n\n### 今天做了什么产出（图/视频/工具/内容）\n-\n\n### 今天遇到什么问题\n-\n\n### 明天计划学什么\n-\n\n### 账号数据（如有更新）\n- AI 学习账号：粉丝___ / 今日播放___\n- 王者账号：粉丝___ / 今日播放___";
+    var tpl = "## "+todayStr()+"\n### 今天学了什么（能力/方法）\n-\n\n### 今天做了什么产出（图/视频/工具/内容）\n-\n\n### 今天遇到什么问题\n-\n\n### 明天计划做什么\n-\n\n### 本周数据（如有更新）\n- 产出数据：___ / 反馈：___";
     copyText(tpl, "日记录模板已复制，粘贴到 12-每日记录/2026-09/ 下的新文件"); return;
   }
   if (a==="copy-topic-prompt"){
@@ -1339,7 +1340,7 @@ document.addEventListener("click", function(e){
     return;
   }
   if (a==="set-root"){
-    var nv = prompt("输入资料库根目录（末尾带 /），例如 E:/腾讯/AI学习资料库/", rootBase());
+    var nv = prompt("输入资料库根目录（末尾带 /），例如 D:/MyLibrary/", rootBase() || "");
     if (nv===null) return;
     nv = nv.replace(/\\/g,"/").replace(/\s/g,"");
     if (nv && nv.slice(-1)!=="/") nv += "/";
