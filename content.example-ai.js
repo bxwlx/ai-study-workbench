@@ -1,9 +1,6 @@
-// ============================================================
-// AI 学习示例包（官方示例，脱敏通用版）
-// 使用：复制为 content.js（与 工作台.html 同目录）后双击工作台.html
-// 说明：这是「换领域只改 content」的活例子；含个人背景的内容（特定账号/职业
-//       变现目标）已全部剔除，可放心修改或公开。file 留空 = 按钮自动隐藏。
-// ============================================================
+// 示例内容包（AI 学习通用版）：复制为 content.js 后双击 index.html 即可体验。
+// 换领域只改本文件：theme / modules / daily / manuals / prompts / glossary / tutorials / platforms。
+// file 留空 = 对应按钮自动隐藏。
 
 window.__WB_CONTENT__ = {
   "app": "ai-study-workbench-example",
